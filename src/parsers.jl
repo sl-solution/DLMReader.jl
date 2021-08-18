@@ -1,28 +1,28 @@
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Integer
     # val = Base.tryparse_internal(T, lbuff, cc, nd, 10, false)
-    # # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
-    # # (Ptr{UInt8},Csize_t,Csize_t), lbuff.data, cc-1, nd - cc +1)
-    # # hasvalue ? res[current_line[]] = T(val) : res[current_line[]] = missing
-    # val === nothing ? res[current_line[]] = missing : res[current_line[]] = val
-    (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
-    code == 33 ? res[current_line[]] = x : x = missing
+    hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
+    (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+    hasvalue ? res[current_line[]] = T(val) : res[current_line[]] = missing
+    val === nothing ? res[current_line[]] = missing : res[current_line[]] = val
+    # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
+    # code == 33 ? res[current_line[]] = x : x = missing
 end
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Real
-    # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
-    # (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
-    # hasvalue ? res[current_line[]] = val : res[current_line[]] = missing
-    (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
-    code == 33 ? res[current_line[]] = x : x = missing
+    hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
+    (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+    hasvalue ? res[current_line[]] = val : res[current_line[]] = missing
+    # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
+    # code == 33 ? res[current_line[]] = x : x = missing
 end
-# function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
-#     # hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
-#     # (Ptr{UInt8},Csize_t,Csize_t), lbuff.data, cc-1, nd - cc +1)
-#     # hasvalue ? res[current_line[]] = val : res[current_line[]] = missing
-#     (x, code, startpos, value_len, total_len) = Parsers.xparse(Float32, lbuff, cc, nd)
-#     code == 33 ? res[current_line[]] = x : x = missing
-# end
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
+    hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
+    (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+    hasvalue ? res[current_line[]] = val : res[current_line[]] = missing
+    # (x, code, startpos, value_len, total_len) = Parsers.xparse(Float32, lbuff, cc, nd)
+    # code == 33 ? res[current_line[]] = x : x = missing
+end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
     # code == 33 ? res[current_line[]] = x : x = missing

@@ -231,11 +231,10 @@ function distribute_file(path, types; delimeter = ',', linebreak = '\n', header 
         varnames = Symbol.(strip.(varnames))
     end
 
-    initial_guess_for_row_num = fs/lsize_estimate
-
     # how many bytes we should skip - we should use this information to have a better distribution of file into nt chunks.
     skip_bytes = position(f)
     fs = filesize(f)
+    initial_guess_for_row_num = fs/lsize_estimate
     if !threads || fs < 10^7 || div(fs, Threads.nthreads()) < lsize_estimate
         nt = 1
     else

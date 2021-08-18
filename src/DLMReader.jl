@@ -1,5 +1,6 @@
 module DLMReader
 
+using InMemoryDatasets
 using WeakRefStrings
 export filereader
 
