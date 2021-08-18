@@ -3,6 +3,11 @@ uuid = "e1d33f9a-7203-49d2-8e1a-e3c4f85197b8"
 authors = ["sl-solution <github.sl.solution@icloud.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+InMemoryDatasets = "5c01b14b-ab03-46ff-b164-14c663efdd9f"
+WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+
+
 [compat]
 julia = "1"
 
