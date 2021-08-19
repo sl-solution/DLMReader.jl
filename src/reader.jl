@@ -326,14 +326,14 @@ function guess_structure_of_delimited_file(path, dlm; eol = UInt8('\n'), header 
             if read_byte_val == eol
                 if seen_dlm
                     n_cols += 1
-                    push!(colwidth, 0:0)
+                    fixed isa Dict && push!(colwidth, 0:0)
                 end
                 break
             end
             if read_byte_val in dlm
                 n_cols += 1
                 seen_dlm = true
-                push!(colwidth, col_width)
+                fixed isa Dict && push!(colwidth, col_width)
             end
         end
     end
