@@ -23,3 +23,14 @@ Base.codeunit(::LineBuffer) = UInt8
 Base.codeunit(s::LineBuffer, i::Integer) = s.data[i]
 
 Base.isvalid(s::LineBuffer, i::Int) = checkbounds(Bool, s, i)
+
+# minimum type defination for parsing TimeType data
+
+struct DT{N} <: AbstractString
+    data::Vector{UInt8}
+end
+
+strlength(s::DT{N}) where N = N
+function allocateDT(::Type{DT{N}}, len) where N
+    DT{N}(fill(0x00, N*len))
+end

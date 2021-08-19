@@ -9,6 +9,15 @@
     return true, length(buffer)
 end
 
+@inline function _find_how_many_dlm(headerl, dlm)
+    cnt = 1
+    for c in headerl
+        c in dlm ? cnt += 1 : nothing
+    end
+    cnt
+end
+
+tryparse_with_missing(T, x) = ismissing(x) ? missing : tryparse(T, x)
 
 function count_lines_of_file(path, lo, hi, eol)
     f = open(path, "r")
@@ -42,9 +51,15 @@ function estimate_linesize(path; guessingrows = 20)
     for l in eachline(path)
         if length(l) > line_estimate
             line_estimate = length(l)
+            length(l) > 2^16 && break
         end
         cnt += 1
         cnt > guessingrows && break
     end
     line_estimate
 end
+
+
+_todate(s::AbstractString) = DateFormat(s)
+_todate(s::DateFormat) = s
+_todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateFormat"))
