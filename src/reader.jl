@@ -105,7 +105,6 @@ end
             parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, j)
             field_start = fixed[j].stop + offset + 1
         end
-
         j += 1
         if eol_reached
             current_line[] += 1
@@ -135,7 +134,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
     last_line = false
     last_valid_buff = buffsize
     # position which reading should be started
-    seek(f, lo - 1)
+    seek(f, max(0, lo - 1))
 
     # TODO we should have a strategy when line is to long
     while true
@@ -196,7 +195,6 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     end
 
     f = open(path, "r")
-
     # generating varnames
     varnames = :auto
     if header
