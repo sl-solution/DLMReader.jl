@@ -410,7 +410,7 @@ end
 function filereader(path; types = nothing, delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd")
     if types === nothing
         intypes = guess_structure_of_delimited_file(path, UInt8.(delimiter); eol = UInt8('\n'), header = header, guessingrows = guessingrows, fixed = fixed, dtformat = dtformat)
-    elseif typeof(types) <: AbstractVector{DataType}
+    elseif types isa Vector && eltype(types) <: Union{DataType,Type}
         intypes = types
     else
         throw(ArgumentError("types should be a vector of types"))
