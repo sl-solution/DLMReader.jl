@@ -39,7 +39,11 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
     # code == 33 ? res[current_line[]] = x : x = missing
     l = nd - cc + 1
-    l == 0 ? res[current_line[]] = missing : res[current_line[]] = unsafe_string(pointer(lbuff, cc), l)
+    cnt = 0
+    for i in cc:nd
+        cnt += lbuff[i] == 0x20
+    end
+    l == 0 || l == cnt ? res[current_line[]] = missing : res[current_line[]] = unsafe_string(pointer(lbuff, cc), l)
 end
 # function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
 #     (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd, Parsers.Options())

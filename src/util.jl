@@ -17,7 +17,7 @@ end
     cnt
 end
 
-tryparse_with_missing(T, x) = ismissing(x) ? missing : tryparse(T, x)
+tryparse_with_missing(T, x) = ismissing(x) ? nothing : tryparse(T, x)
 
 function count_lines_of_file(path, lo, hi, eol)
     f = open(path, "r")
