@@ -95,7 +95,7 @@ end
         char_cnt = 0
         dt_cnt = 0
 
-        line_end = find_end_of_line(buffer.data, line_start, length(buffer.data), eol)
+        line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
         field_start = line_start
         for j in 1:n_cols
             if types[j] <: Characters
@@ -127,6 +127,7 @@ end
             end
             dlm_pos > line_end && break
         end
+
         line_start = line_end + length(eol) + 1
         current_line[] += 1
         line_start > last_valid_buff && break
@@ -184,7 +185,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
             elseif cur_position == hi
                 last_line = true
                 if buffer.data[cnt_read_bytes] != eol_last || buffer.data[cnt_read_bytes - eol_len + 1] != eol_first
-                    @warn "the last line is not ended with line break character"
+                    @warn "the last line is not ended with `end of line` character"
                     # we read it anyway
                     # if !eof(f)
                     #     for i in cnt_read_bytes:-1:1
@@ -192,14 +193,15 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
                     #         buffer.data[i] == eol && break
                     #     end
                     # end
-
+                    last_valid_buff = cnt_read_bytes
                 else
                     last_valid_buff = cnt_read_bytes
                 end
             else cur_position > hi
                 last_line = true
-                last_valid_buff = buffsize - (cur_position - hi)
+                last_valid_buff = buffsize - (cur_position - hi + 1)
             end
+
             _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr)
             # we need to break at some point
             last_line && break
@@ -292,32 +294,29 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
 
     cz = div(fs, nt)
     lo = [(i-1)*cz+1 for i in 1:nt]
-    hi = [i*cz-1 for i in 1:nt]
-
+    hi = [i*cz for i in 1:nt]
     hi[end] = fs
     lo[1] += skip_bytes
     cur_value = Vector{UInt8}(undef, eol_len)
     for i in 1:length(hi)-1
-        seek(f, hi[i] - eol_len + 1)
+        seek(f, hi[i] - eol_len)
         for k in 1:eol_len
             cur_value[k] = read(f, UInt8)
         end
-        if eol_len == 2
-            seek(f, position(f) - 1)
-        end
-
         if last(cur_value) != eol_last || first(cur_value) != eol_first
             while true
-                read!(f, cur_value)
                 if eol_len == 2
                     seek(f, position(f) - 1)
                 end
+                read!(f, cur_value)
                 last(cur_value) == eol_last && first(cur_value) == eol_first && break
             end
-            hi[i] = position(f) + 1
+            hi[i] = position(f)
             lo[i+1] = hi[i] + 1
         end
     end
+
+    x = read(path)
     ns = fill(1, nt)
     if nt > 1
         Threads.@threads for i in 1:nt
