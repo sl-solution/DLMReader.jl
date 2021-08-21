@@ -2,6 +2,8 @@ module DLMReader
 
 using InMemoryDatasets
 using WeakRefStrings
+using Reexport
+@reexport using Dates
 export filereader
 
 include("linebuffer.jl")
