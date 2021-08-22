@@ -84,3 +84,5 @@ filereader("ex4.csv", fixed = Dict(1 => 1:4), header = false)
 filereader("ex5.csv", delimiter = [';', ':', ','])
 filereader("ex6.csv", delimiter = ' ', informat = Dict(2=>COMMA!), header = [:ID, :price, :quarter])
 ```
+
+`COMMA!` is a built-in informat which removes the comma from numbers. If number contains dollar or sterling signs, it also removes them. The trimed text is sent to the parser for converting to a number.
