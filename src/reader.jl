@@ -321,7 +321,6 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         end
     end
 
-    x = read(path)
     ns = fill(1, nt)
     if nt > 1
         Threads.@threads for i in 1:nt
