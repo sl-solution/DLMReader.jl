@@ -3,7 +3,7 @@ function find_end_of_line(buff, lo, hi, eol)
     last_eol = last(eol)
     first_eol = first(eol)
 
-    for i in (lo+eol_len-1):hi
+    @inbounds for i in (lo+eol_len-1):hi
         buff[i] == last_eol && buff[i - eol_len + 1] == first_eol && return i - eol_len
     end
     # couldn't find line break characters
@@ -12,13 +12,13 @@ end
 
 function find_next_delim(buffer, lo, hi, dlm, dlmstr)
     if dlmstr === nothing
-        for i in lo:hi
+        @inbounds for i in lo:hi
             buffer[i] in dlm && return i
         end
     else
         dlmstr_len = length(dlm)
         dlmstr_last = last(dlm)
-        for i in lo+dlmstr_len-1:hi
+        @inbounds for i in lo+dlmstr_len-1:hi
             if buffer[i] == dlmstr_last
 
                 flag = true
@@ -88,7 +88,7 @@ function count_lines_of_file(path, lo, hi, eol)
     nl = nb = 0
     cur_position = lo
     seek(f, max(0, lo-1))
-    while !eof(f) && cur_position <= hi
+    @inbounds while !eof(f) && cur_position <= hi
         nb = readbytes!(f, a)
         cur_position = position(f)
         if cur_position > hi

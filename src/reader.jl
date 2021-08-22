@@ -1,10 +1,12 @@
 @inline function parse_data!(res, buffer, types, cc, en, current_line, char_buff, char_cnt, df, dt_cnt, j, informat)
-        _infmt! = get(informat, j, identity)
-        if _infmt! !== identity
-            _infmt!(buffer, cc, en)
+        if !isempty(informat)
+            _infmt! = get(informat, j, identity)
+            if _infmt! !== identity
+                _infmt!(buffer, cc, en)
+            end
         end
 
-        if types[j] <: Int64
+        @inbounds if types[j] <: Int64
             buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64)
         elseif types[j] <: Float64
             buff_parser(res[j]::Vector{Union{Missing, Float64}}, buffer.data, cc, en, current_line, Float64)
