@@ -296,8 +296,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
             end
         end
     end
-    charbuff = fill(charbuff, nt)
-
+    charbuff = [deepcopy(charbuff) for _ in 1:nt]
 
     cz = div(fs, nt)
     lo = [(i-1)*cz+1 for i in 1:nt]
