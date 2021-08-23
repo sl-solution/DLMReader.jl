@@ -332,7 +332,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
             ns[i] = count_lines_of_file(path, lo[i], hi[i], eol)
         end
     end
-    res = Any[Vector{Union{Missing, types[i]}}(undef, sum(ns)) for i in 1:length(types)]
+    res = Any[allocatecol_for_res(types[i], sum(ns)) for i in 1:length(types)]
     line_hi = cumsum(ns)
     line_lo = [1; line_hi[1:end] .+ 1]
     close(f)
@@ -433,7 +433,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     end
     hi = file_pos
     types = repeat([String], n_cols)
-    res = [Vector{Union{Missing, String}}(undef, rows_in) for _ in 1:n_cols]
+    res = [allocatecol_for_res(String, rows_in) for _ in 1:n_cols]
     readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat)
     outtypes = Vector{DataType}(undef, n_cols)
     if !(dtformat isa Dict)

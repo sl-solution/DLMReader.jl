@@ -1,3 +1,7 @@
+function allocatecol_for_res(T, s)
+    InMemoryDatasets.Missings.missings(T, s)
+end
+
 function find_end_of_line(buff, lo, hi, eol)
     eol_len = length(eol)
     last_eol = last(eol)
