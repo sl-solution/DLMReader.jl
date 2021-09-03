@@ -34,24 +34,35 @@ function COMMAX!(x, lo, hi)
     nothing
 end
 
+# needs more work
 function NUM_NA!(x, lo, hi)
-    flag = true
-    for i in lo+1:hi
-        if x.data[i] == 0x20
-            continue
-        elseif x.data[i-1] == UInt8('N') && x.data[i] == UInt('A')
-            flag &= true
-        elseif x.data[i-1] == UInt8('n') && x.data[i] == UInt('a')
-            flag &= true
+    seen = false
+    cnt = lo
+    while true
+        if x.data[cnt] == 0x20
+            cnt += 1
+        elseif x.data[cnt] in (UInt8('N'), UInt8('n'))
+            if cnt < hi
+                if x.data[cnt+1] in (UInt8('A'), UInt8('a'))
+                    seen = true
+                    cnt += 2
+                else
+                    seen = false
+                    cnt += 2
+                end
+            else
+                seen = false
+                cnt += 1
+            end
         else
-            flag = false
+            seen = false
+            break
         end
+        cnt > hi && break
     end
-    if !(x.data[lo] in (UInt8('N'), UInt8('n'), 0x20))
-        flag = false
-    end
-    # should we check the last character
-    if flag
+
+
+    if seen
         @simd for i in lo:hi
             x.data[i] = 0x20
         end
