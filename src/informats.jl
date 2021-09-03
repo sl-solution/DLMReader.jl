@@ -34,36 +34,31 @@ function COMMAX!(x, lo, hi)
     nothing
 end
 
-# needs more work
+# treats NA,na,Na,nA,... as missing value for numeric columns
 function NUM_NA!(x, lo, hi)
-    seen = false
-    cnt = lo
-    while true
-        if x.data[cnt] == 0x20
-            cnt += 1
-        elseif x.data[cnt] in (UInt8('N'), UInt8('n'))
-            if cnt < hi
-                if x.data[cnt+1] in (UInt8('A'), UInt8('a'))
-                    seen = true
-                    cnt += 2
-                else
-                    seen = false
-                    cnt += 2
-                end
-            else
-                seen = false
-                cnt += 1
-            end
-        else
-            seen = false
+    for i in lo:hi
+        if x.data[i] != 0x20
+            lo = i
             break
         end
-        cnt > hi && break
+    end
+    for i in hi:-1:lo
+        if x.data[i] != 0x20
+            hi = i
+            break
+        end
+    end
+    flag = false
+    if hi-lo+1 == 2
+        if x.data[lo] in (UInt8('N'), UInt8('n')) && x.data[hi] in (UInt8('A'), UInt8('a'))
+            flag = true
+        end
     end
 
 
-    if seen
-        @simd for i in lo:hi
+
+    if flag
+        for i in lo:hi
             x.data[i] = 0x20
         end
         x.data[lo] = UInt8('.')
