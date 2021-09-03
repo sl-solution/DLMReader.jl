@@ -17,7 +17,7 @@ end
 function find_next_delim(buffer, lo, hi, dlm, dlmstr)
     if dlmstr === nothing
         @inbounds for i in lo:hi
-            buffer[i] in dlm && return i
+            buffer[i] in dlm && return i,0,0
         end
     else
         dlmstr_len = length(dlm)
@@ -32,13 +32,96 @@ function find_next_delim(buffer, lo, hi, dlm, dlmstr)
                         break
                     end
                 end
-                flag && return i
+                flag && return i,0,0
             end
         end
     end
-    return 0
+    return 0,0,0
 end
 
+function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
+    new_lo = 0
+    new_hi = 0
+    if dlmstr === nothing
+        i = lo
+        @inbounds while true
+            if buffer[i] == qut
+                if i>lo && buffer[i-1] != qutesc
+                    eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
+                    eoq_loc == 0 && return 0,0,0
+                    new_lo = i+1
+                    new_hi = eoq_loc-1
+                    i = eoq_loc + 1
+                elseif i == lo
+                    eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
+                    eoq_loc == 0 && return 0,0,0
+                    new_lo = i+1
+                    new_hi = eoq_loc-1
+                    i = eoq_loc + 1
+                end
+            end
+            if buffer[i] in dlm
+                return i,new_lo,new_hi
+            end
+            i += 1
+            i > hi && return 0,new_lo, new_hi
+        end
+    else
+        dlmstr_len = length(dlm)
+        dlmstr_last = last(dlm)
+        i = lo
+        while true
+            if buffer[i] == qut
+                if i>lo && buffer[i-1] != qutesc
+                    i > lo+dlmstr_len-1 && break
+                    eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
+                    eoq_loc == 0 && return 0,0,0
+                    new_lo = i+1
+                    new_hi = eoq_loc-1
+                    i = eoq_loc + 1
+                elseif i == lo
+                    eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
+                    eoq_loc == 0 && return 0,0,0
+                    new_lo = i+1
+                    new_hi = eoq_loc-1
+                    i = eoq_loc + 1
+                end
+            end
+            i += 1
+            i > lo+dlmstr_len-1 && break
+        end
+        @inbounds while true #for i in lo+dlmstr_len-1:hi
+            if buffer[i] == qut && buffer[i-1] != qutesc
+                eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
+                eoq_loc == 0 && return 0,0,0
+                new_lo = i+1
+                new_hi = eoq_loc-1
+                i = eoq_loc + 1
+            end
+            if buffer[i] == dlmstr_last
+                flag = true
+                for j in 1:dlmstr_len-1
+                    if buffer[i - j] != dlm[dlmstr_len - j]
+                        flag = false
+                        break
+                    end
+                end
+                flag && return i, new_lo, new_hi
+            end
+            i += 1
+            i > hi && return 0,0,0
+        end
+    end
+    return 0,0,0
+end
+
+function find_next_quote(buffer, lo, hi, qut, qutesc)
+    for i in lo:hi
+        buffer[i] == qut && buffer[i-1] != qutesc && return i
+    end
+    return 0
+end
+            
 
 # when eol is \r\n
 @inline function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
@@ -80,7 +163,51 @@ end
     cnt
 end
 
-tryparse_with_missing(T, x) = ismissing(x) ? nothing : tryparse(T, x)
+function tryparse_with_missing(T, x, infmt)
+    ismissing(x) && return 1
+    _tmp = LineBuffer(UInt8.(collect(x)))
+    lo = 1
+    hi = length(x)
+    if infmt !== identity
+        infmt(_tmp, lo, hi)
+    end
+    flag = true
+    @simd for i in lo:hi
+        @inbounds if (_tmp.data[i] == 0x20 || _tmp.data[i] == 0x2e) 
+            flag &= true    
+        else
+            flag &= false
+        end
+    end
+    flag && return 1
+    ismissing(_tmp) ? 1 : Int(tryparse(T, _tmp) !== nothing)
+end
+
+function r_type_guess(x, infmt)
+    T = Int
+    flag = true
+    for i in 1:length(x)
+        res = tryparse_with_missing(T, x[i], infmt)
+        if res == 0 
+            flag = false
+            break
+        end
+    end
+    flag && return T
+    T = Float64
+    flag = true
+    for i in 1:length(x)
+        res = tryparse_with_missing(T, x[i], infmt)
+        if res == 0 
+            flag = false
+            break
+        end
+    end
+    flag && return T
+    return String
+end
+
+
 
 function count_lines_of_file(path, lo, hi, eol)
     f = open(path, "r")
@@ -168,9 +295,10 @@ function read_one_line(path, lo, hi, eol)
             else
                 last_nb = nb
             end
+            l_len += eol_len-1
             for i in eol_len:last_nb
+                l_len += 1
                 if _tmp_line[i] == eol_last && _tmp_line[i - eol_len + 1] == eol_first
-                    l_len = i
                     reached_eol = true
                     break
                 end
@@ -187,10 +315,10 @@ function read_one_line(path, lo, hi, eol)
 end
 
 
-function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr)
+function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar)
     _lvarnames, f_pos = read_one_line(path, lo, hi, eol)
     _varnames = [Vector{Union{String, Missing}}(undef, 1) for _ in 1:length(types)]
-    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr)
+    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar)
     varnames = Vector{String}(undef, length(types))
     for i in 1:length(_varnames)
         ismissing(_varnames[i][1]) && throw(ArgumentError("the variable name inference is not valid, setting `header = false` may solve the issue."))
@@ -227,7 +355,3 @@ _todate(s::AbstractString) = DateFormat(s)
 _todate(s::DateFormat) = s
 _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateFormat"))
 
-
-# line breaks can be \r \n or any other thing?
-function line_break_finder(buff, lo, hi, linebreaks)
-end
