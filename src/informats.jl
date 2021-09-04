@@ -18,7 +18,7 @@ end
 function COMMAX!(x, lo, hi)
     cnt = hi
     for i in hi:-1:lo
-        if !(x.data[i] in (UInt8('.'), UInt8('€')))
+        if !(x.data[i] in (UInt8('.'))) #  TODO we should take care of('€') it is not UInt8
             if x.data[i] == UInt8(',')
                 x.data[cnt] = UInt8('.')
             else

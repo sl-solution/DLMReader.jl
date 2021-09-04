@@ -463,7 +463,8 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
                 outtypes[j] = String
                 continue
             end
-            outtypes[j] = r_type_guess(res[j], get(informat, j, identity))
+            #TODO should we apply format here or in readfile_chunk! in the above?
+            outtypes[j] = r_type_guess(res[j], identity)
         end
     else
         for j in 1:n_cols
@@ -485,7 +486,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
                     outtypes[j] = String
                     continue
                 end
-                outtypes[j] = r_type_guess(res[j], get(informat, j, identity))
+                outtypes[j] = r_type_guess(res[j], identity)
             end
         end
     end
