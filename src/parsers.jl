@@ -9,7 +9,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <
 
     if val === nothing
         @simd for i in cc:nd
-            @inbounds if (lbuff.data[i] != 0x20 || lbuff.data[i] != 0x2e) 
+            @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e) 
                 flag = 1
                 
             end
