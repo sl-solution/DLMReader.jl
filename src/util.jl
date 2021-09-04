@@ -165,7 +165,7 @@ end
 
 function tryparse_with_missing(T, x, infmt)
     ismissing(x) && return 1
-    _tmp = LineBuffer(UInt8.(collect(x)))
+    _tmp = LineBuffer(collect(codeunits(x)))
     lo = 1
     hi = length(x)
     if infmt !== identity
