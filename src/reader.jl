@@ -96,7 +96,7 @@ end
     #keeping track of number of warnings
     warn_pass_end_of_line = 0
 
-    dlmstr === nothing ? dlm_length = 1  : dlm_length = length(dlmstr)
+    dlmstr === nothing ? dlm_length = 1  : dlm_length = length(dlm)
     anything_is_wrong = 0
     any_problem_with_parsing = 0 
     while true
@@ -167,7 +167,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
         if dlmstr === nothing
             dlm = UInt8.(delimiter)
         elseif dlmstr isa AbstractString
-            dlm = UInt8.(collect(dlmstr))
+            dlm = collect(codeunits(dlmstr))
         else
             throw(ArgumentError("`dlmstr` must be a string of ASCII characters"))
         end
@@ -377,7 +377,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     if dlmstr === nothing
         dlm = UInt8.(delimiter)
     elseif dlmstr isa AbstractString
-        dlm = UInt8.(collect(dlmstr))
+        dlm = collect(codeunits(dlmstr))
     else
         throw(ArgumentError("`dlmstr` must be a string of ASCII characters"))
     end
