@@ -173,7 +173,7 @@ function tryparse_with_missing(T, x, infmt)
     end
     flag = true
     @simd for i in lo:hi
-        @inbounds if (_tmp.data[i] == 0x20 && _tmp.data[i] == 0x2e) 
+        @inbounds if (_tmp.data[i] == 0x20 || _tmp.data[i] == 0x2e) 
             flag &= true    
         else
             flag &= false
