@@ -14,7 +14,7 @@ function find_end_of_line(buff, lo, hi, eol)
     return hi
 end
 
-function find_next_delim(buffer, lo, hi, dlm, dlmstr)
+@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr)
     if dlmstr === nothing
         @inbounds for i in lo:hi
             buffer[i] in dlm && return i,0,0
@@ -39,14 +39,15 @@ function find_next_delim(buffer, lo, hi, dlm, dlmstr)
     return 0,0,0
 end
 
-function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
+# this needs refactoring
+@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
     new_lo = 0
     new_hi = 0
-    if dlmstr === nothing
+    if dlmstr === nothing || length(dlm) == 1
         i = lo
         @inbounds while true
             if buffer[i] == qut
-                if i>lo && buffer[i-1] != qutesc
+                if i>lo# && buffer[i-1] != qutesc
                     eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
                     eoq_loc == 0 && return 0,0,0
                     new_lo = i+1
@@ -70,9 +71,10 @@ function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
         dlmstr_len = length(dlm)
         dlmstr_last = last(dlm)
         i = lo
-        while true
+        # take care of the first few values
+        @inbounds while true
             if buffer[i] == qut
-                if i>lo && buffer[i-1] != qutesc
+                if i>lo #&& buffer[i-1] != qutesc
                     i > lo+dlmstr_len-1 && break
                     eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
                     eoq_loc == 0 && return 0,0,0
@@ -88,16 +90,18 @@ function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
                 end
             end
             i += 1
-            i > lo+dlmstr_len-1 && break
+            (i > lo+dlmstr_len-1 || i > hi) && break
         end
+        i > hi && return 0,new_lo, new_hi
         @inbounds while true #for i in lo+dlmstr_len-1:hi
-            if buffer[i] == qut && buffer[i-1] != qutesc
+            if buffer[i] == qut
                 eoq_loc = find_next_quote(buffer, i+1, hi, qut, qutesc)
                 eoq_loc == 0 && return 0,0,0
                 new_lo = i+1
                 new_hi = eoq_loc-1
                 i = eoq_loc + 1
             end
+           
             if buffer[i] == dlmstr_last
                 flag = true
                 for j in 1:dlmstr_len-1
@@ -115,13 +119,44 @@ function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
     return 0,0,0
 end
 
-function find_next_quote(buffer, lo, hi, qut, qutesc)
-    for i in lo:hi
-        buffer[i] == qut && buffer[i-1] != qutesc && return i
+@inline function find_next_quote(buffer, lo, hi, qut, qutesc)
+    @inbounds if qut !== qutesc
+        for i in lo:hi
+            buffer[i] == qut && buffer[i-1] != qutesc && return i
+        end
+    else
+        for i in lo:hi
+            if buffer[i] == qut 
+                if i < hi && i > lo+1 #interior
+                    buffer[i+1] != qut && buffer[i-1] != qut && return i
+                elseif i <= lo + 1 && i < hi
+                    buffer[i+1] != qut && return i
+                elseif i == hi && i > lo + 1
+                    return i
+                elseif i == hi
+                    return i
+                end
+            end
+        end
     end
     return 0
 end
-            
+
+#basic idea to remove escapechar
+function remove_escape_char(buffer, lo, hi, qut, qutesc)
+    cnt = lo
+    for i in lo:hi
+        if buffer[i] == qut
+            cnt -= 1
+            buffer[cnt] = buffer[i]
+        else
+            buffer[cnt] = buffer[i]
+        end
+        cnt += 1
+    end
+    lo, cnt - 1
+end
+    
 
 # when eol is \r\n
 @inline function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
