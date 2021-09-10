@@ -88,7 +88,7 @@ end
 
 
 
-@inline function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar)
+@inline function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -145,9 +145,9 @@ end
         end
         if any_problem_with_parsing>0
             Threads.atomic_add!(number_of_errors_happen_so_far, 1)
-            if number_of_errors_happen_so_far[]<20
+            if number_of_errors_happen_so_far[] <= warn
                 @warn "There is a problem with parsing one of the columns in line $(current_line[]), the values are set as missing, the buffer for the line is:
-                $(buffer[line_start:line_end])"
+                $(unsafe_string(pointer(buffer.data, line_start), line_end - line_start + 1))"
             end
         end
 
@@ -160,7 +160,7 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true)
 
     f = open(path, "r")
     try
@@ -208,7 +208,9 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
             elseif cur_position == hi
                 last_line = true
                 if buffer.data[cnt_read_bytes] != eol_last || buffer.data[cnt_read_bytes - eol_len + 1] != eol_first
-                    @warn "the last line is not ended with `end of line` character"
+                    if eolwarn
+                        @warn "the last line is not ended with `end of line` character"
+                    end
                     # we read it anyway
                     # if !eof(f)
                     #     for i in cnt_read_bytes:-1:1
@@ -225,7 +227,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi; delimi
                 last_valid_buff = buffsize - (cur_position - hi + 1)
             end
 
-            _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar)
+            _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn)
             # we need to break at some point
             last_line && break
         end
@@ -239,7 +241,7 @@ end
 
 
 # main distributer
-function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing)
+function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true)
     eol = UInt8.(linebreak)
     eol_first = first(eol)
     eol_last = last(eol)
@@ -354,18 +356,18 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     close(f)
     if nt > 1
         Threads.@threads for i in 1:nt
-            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i]; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar)
+            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i]; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn)
         end
     else
         for i in 1:nt
-            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i]; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar)
+            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i]; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn)
         end
     end
     Dataset(res, colnames, copycols = false)
 end
 
 
-function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing)
+function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, eolwarn = false)
 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
@@ -454,7 +456,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     hi = file_pos
     types = repeat([String], n_cols)
     res = [allocatecol_for_res(String, rows_in) for _ in 1:n_cols]
-    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar)
+    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar, eolwarn = eolwarn)
     outtypes = Vector{DataType}(undef, n_cols)
     if !(dtformat isa Dict)
         for j in 1:n_cols
@@ -495,7 +497,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
 end
 
 
-function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}())
+function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}(), warn = 20, eolwarn = true)
     number_of_errors_happen_so_far[] = 0
     if quotechar !== nothing
         quotechar = UInt8(quotechar)
@@ -506,7 +508,7 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
         end
     end
     if types === nothing
-        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar)
+        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, eolwarn = false)
     elseif types isa Vector && eltype(types) <: Union{DataType,Type}
         intypes = types
         if linebreak === nothing
@@ -516,5 +518,5 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
         throw(ArgumentError("types should be a vector of types"))
     end
     !all(isascii.(delimiter)) && throw(ArgumentError("delimiter must be ASCII"))
-    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar)
+    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn)
 end
