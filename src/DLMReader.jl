@@ -16,7 +16,7 @@ include("informats.jl")
 include("parsers.jl")
 include("reader.jl")
 # needs work
-include("precompile.jl")
+# include("precompile.jl")
 
 
 end

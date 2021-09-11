@@ -101,7 +101,7 @@ end
                 new_hi = eoq_loc-1
                 i = eoq_loc + 1
             end
-           
+
             if buffer[i] == dlmstr_last
                 flag = true
                 for j in 1:dlmstr_len-1
@@ -126,7 +126,7 @@ end
         end
     else
         for i in lo:hi
-            if buffer[i] == qut 
+            if buffer[i] == qut
                 if i < hi && i > lo+1 #interior
                     buffer[i+1] != qut && buffer[i-1] != qut && return i
                 elseif i <= lo + 1 && i < hi
@@ -156,7 +156,7 @@ function remove_escape_char(buffer, lo, hi, qut, qutesc)
     end
     lo, cnt - 1
 end
-    
+
 
 # when eol is \r\n
 @inline function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
@@ -208,8 +208,8 @@ function tryparse_with_missing(T, x, infmt)
     end
     flag = true
     @simd for i in lo:hi
-        @inbounds if (_tmp.data[i] == 0x20 || _tmp.data[i] == 0x2e) 
-            flag &= true    
+        @inbounds if (_tmp.data[i] == 0x20 || _tmp.data[i] == 0x2e)
+            flag &= true
         else
             flag &= false
         end
@@ -223,7 +223,7 @@ function r_type_guess(x, infmt)
     flag = true
     for i in 1:length(x)
         res = tryparse_with_missing(T, x[i], infmt)
-        if res == 0 
+        if res == 0
             flag = false
             break
         end
@@ -233,7 +233,7 @@ function r_type_guess(x, infmt)
     flag = true
     for i in 1:length(x)
         res = tryparse_with_missing(T, x[i], infmt)
-        if res == 0 
+        if res == 0
             flag = false
             break
         end
@@ -350,14 +350,24 @@ function read_one_line(path, lo, hi, eol)
 end
 
 
-function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar)
+function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, autogen)
     _lvarnames, f_pos = read_one_line(path, lo, hi, eol)
     _varnames = [Vector{Union{String, Missing}}(undef, 1) for _ in 1:length(types)]
-    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar)
+    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar)
     varnames = Vector{String}(undef, length(types))
+    cnter = 1
     for i in 1:length(_varnames)
-        ismissing(_varnames[i][1]) && throw(ArgumentError("the variable name inference is not valid, setting `header = false` may solve the issue."))
-        varnames[i] = _varnames[i][1]
+
+        if ismissing(_varnames[i][1])
+            if autogen
+                varnames[i] = "NONAME"*string(cnter)
+                cnter += 1
+            else
+                throw(ArgumentError("the variable name inference is not valid, setting `header = false` may solve the issue."))
+            end
+        else
+            varnames[i] = _varnames[i][1]
+        end
     end
     f_pos, Symbol.(strip.(varnames))
 end
@@ -390,3 +400,18 @@ _todate(s::AbstractString) = DateFormat(s)
 _todate(s::DateFormat) = s
 _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateFormat"))
 
+
+@inline function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
+    txt = "\n"
+    for j in 1:length(col)
+        txt *= string(col[j])
+        txt *= " = "
+        txt *= string(res[j][cur_l])
+        if j < length(col)
+            txt *= ", "
+        else
+            txt *= "\n"
+        end
+    end
+    txt *= unsafe_string(pointer(buff, l_st), l_en - l_st + 1)
+end
