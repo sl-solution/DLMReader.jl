@@ -509,8 +509,13 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
             escapechar = UInt8('\\')
         end
     end
-    if types === nothing
+    if types === nothing || types isa Dict
         linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, eolwarn = false)
+        if types isa Dict
+            for (k, v) in types
+                intypes[k] = v
+            end
+        end
     elseif types isa Vector && eltype(types) <: Union{DataType,Type}
         intypes = types
         if linebreak === nothing

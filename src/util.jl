@@ -405,6 +405,7 @@ _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateForma
     txt = "\n"
     for j in 1:length(col)
         txt *= string(col[j])
+        txt *= "::" * string(nonmissingtype(eltype(res[j])))
         txt *= " = "
         txt *= string(res[j][cur_l])
         if j < length(col)
