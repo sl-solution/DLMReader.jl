@@ -43,7 +43,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Int
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
     # code == 33 ? res[current_line[]] = x : x = missing
 end
-using Parsers
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Real
     hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
     (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
