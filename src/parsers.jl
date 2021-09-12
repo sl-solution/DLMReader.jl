@@ -9,12 +9,12 @@ function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <
 
     if val === nothing
         @simd for i in cc:nd
-            @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e) 
+            @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
                 flag = 1
-                
+
             end
         end
-        res[current_line[]] = missing 
+        res[current_line[]] = missing
     else
         res[current_line[]] = T(val[1]...)
     end
@@ -30,12 +30,12 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Int
     # hasvalue ? res[current_line[]] = T(val) : res[current_line[]] = missing
     if val === nothing
         @simd for i in cc:nd
-            @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e) 
+            @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
                 flag = 1
-                
+
             end
         end
-        res[current_line[]] = missing 
+        res[current_line[]] = missing
     else
         res[current_line[]] = val
     end
@@ -43,40 +43,41 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Int
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
     # code == 33 ? res[current_line[]] = x : x = missing
 end
-
+using Parsers
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Real
     hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
     (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
     flag = 0
     if hasvalue
-        res[current_line[]] = val 
+        res[current_line[]] = val
     else
         @simd for i in cc:nd
-            @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e) 
+            @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
                 flag = 1
-                
+
             end
         end
-        res[current_line[]] = missing 
+        res[current_line[]] = missing
     end
     flag
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
-    # code == 33 ? res[current_line[]] = x : x = missing
+    # RES = Parsers.xparse(T, lbuff, cc, nd)
+    # RES.code == 33 ? res[current_line[]] = RES.val : res[current_line[]] = missing
+    # return 0
 end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
     hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
     (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
     flag = 0
     if hasvalue
-        res[current_line[]] = val 
+        res[current_line[]] = val
     else
         @simd for i in cc:nd
-            @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e) 
+            @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
                 flag = 1
-                
+
             end
         end
-        res[current_line[]] = missing 
+        res[current_line[]] = missing
     end
     flag
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(Float32, lbuff, cc, nd)
@@ -92,7 +93,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     end
     l == 0 || l == cnt ? res[current_line[]] = missing : res[current_line[]] = unsafe_string(pointer(lbuff, cc), l)
     return 0
-    
+
 end
 # function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
 #     (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd, Parsers.Options())
@@ -101,7 +102,7 @@ end
 #
 function (::Type{T})(buf::Vector{UInt8}, pos, len) where {T <: InlineString}
    if T === InlineString1
-       sizeof(x) == 1 || WeakRefStrings.stringtoolong(T, sizeof(x))
+       len == 1 || WeakRefStrings.stringtoolong(T, sizeof(x))
        return Base.bitcast(InlineString1, buf[pos])
    else
        length(buf) < len && WeakRefStrings.buftoosmall()
