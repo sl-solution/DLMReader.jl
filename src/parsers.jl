@@ -101,14 +101,14 @@ end
 #
 function (::Type{T})(buf::Vector{UInt8}, pos, len) where {T <: InlineString}
    if T === InlineString1
-       len == 1 || WeakRefStrings.stringtoolong(T, sizeof(x))
+       len == 1 || InlineStrings.stringtoolong(T, sizeof(x))
        return Base.bitcast(InlineString1, buf[pos])
    else
-       length(buf) < len && WeakRefStrings.buftoosmall()
-       len < sizeof(T) || WeakRefStrings.stringtoolong(T, len)
+       length(buf) < len && InlineStrings.buftoosmall()
+       len < sizeof(T) || InlineStrings.stringtoolong(T, len)
        y = GC.@preserve buf unsafe_load(convert(Ptr{T}, pointer(buf, pos)))
        sz = 8 * (sizeof(T) - len)
-       return Base.or_int(Base.shl_int(Base.lshr_int(WeakRefStrings._bswap(y), sz), sz), Base.zext_int(T, UInt8(len)))
+       return Base.or_int(Base.shl_int(Base.lshr_int(InlineStrings._bswap(y), sz), sz), Base.zext_int(T, UInt8(len)))
    end
 end
 

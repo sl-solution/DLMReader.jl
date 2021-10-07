@@ -28,14 +28,14 @@ const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
             flag = buff_parser(res[j]::Vector{Union{Missing, Int16}}, buffer, cc, en, current_line, Int16)
         # elseif types[j] <: DT
         #     flag = buff_parser(res[j]::Vector{UInt8}, buffer.data, cc, en, current_line, DT)
-        elseif types[j] <: InlineString1
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString1}}, buffer.data, cc, en, current_line,InlineString1)
-        elseif types[j] <: InlineString3
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString3}}, buffer.data, cc, en, current_line,InlineString3)
-        elseif types[j] <: InlineString7
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString7}}, buffer.data, cc, en, current_line,InlineString7)
-        elseif types[j] <: InlineString15
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString15}}, buffer.data, cc, en, current_line,InlineString15)
+    elseif types[j] <: String1
+            flag = buff_parser(res[j]::Vector{Union{Missing,String1}}, buffer.data, cc, en, current_line,String1)
+        elseif types[j] <: String3
+            flag = buff_parser(res[j]::Vector{Union{Missing,String3}}, buffer.data, cc, en, current_line,String3)
+        elseif types[j] <: String7
+            flag = buff_parser(res[j]::Vector{Union{Missing,String7}}, buffer.data, cc, en, current_line,String7)
+        elseif types[j] <: String15
+            flag = buff_parser(res[j]::Vector{Union{Missing,String15}}, buffer.data, cc, en, current_line,String15)
         elseif types[j] <: Characters{3, UInt8}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{3, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{3, UInt8})
         elseif types[j] <: Characters{5, UInt8}
@@ -70,16 +70,16 @@ const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{16, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{16, UInt8})
         elseif types[j] <: Time
             flag = buff_parser(res[j]::Vector{Union{Missing, Time}}, buffer, cc, en, current_line, df[dt_cnt], Time)
-        elseif types[j] <: InlineString31
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString31}}, buffer.data, cc, en, current_line,InlineString31)
-        elseif types[j] <: InlineString63
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString63}}, buffer.data, cc, en, current_line,InlineString63)
-        elseif types[j] <: InlineString127
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString127}}, buffer.data, cc, en, current_line,InlineString127)
-        elseif types[j] <: InlineString255
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString255}}, buffer.data, cc, en, current_line,InlineString255)
-        elseif types[j] <: InlineString255
-            flag = buff_parser(res[j]::Vector{Union{Missing,InlineString255}}, buffer.data, cc, en, current_line,InlineString255)
+        elseif types[j] <: String31
+            flag = buff_parser(res[j]::Vector{Union{Missing,String31}}, buffer.data, cc, en, current_line,String31)
+        elseif types[j] <: String63
+            flag = buff_parser(res[j]::Vector{Union{Missing,String63}}, buffer.data, cc, en, current_line,String63)
+        elseif types[j] <: String127
+            flag = buff_parser(res[j]::Vector{Union{Missing,String127}}, buffer.data, cc, en, current_line,String127)
+        elseif types[j] <: String255
+            flag = buff_parser(res[j]::Vector{Union{Missing,String255}}, buffer.data, cc, en, current_line,String255)
+        elseif types[j] <: String255
+            flag = buff_parser(res[j]::Vector{Union{Missing,String255}}, buffer.data, cc, en, current_line,String255)
         else # anything else
             flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, String)
         end

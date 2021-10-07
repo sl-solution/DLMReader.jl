@@ -1,9 +1,8 @@
 module DLMReader
 
 using InMemoryDatasets
-using WeakRefStrings
 using Reexport
-@reexport using Dates
+@reexport using Dates, InlineStrings
 export filereader,
     # informats
     COMMA!,
