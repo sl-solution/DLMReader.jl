@@ -66,5 +66,33 @@ function NUM_NA!(x, lo, hi)
     nothing
 end
 
+function CHAR_NA!(x, lo, hi)
+    for i in lo:hi
+        if x.data[i] != 0x20
+            lo = i
+            break
+        end
+    end
+    for i in hi:-1:lo
+        if x.data[i] != 0x20
+            hi = i
+            break
+        end
+    end
+    flag = false
+    if hi-lo+1 == 2
+        if x.data[lo] in (UInt8('N'), UInt8('n')) && x.data[hi] in (UInt8('A'), UInt8('a'))
+            flag = true
+        end
+    end
 
-        
+
+
+    if flag
+        for i in lo:hi
+            x.data[i] = 0x20
+        end
+        # x.data[lo] = UInt8('.')
+    end
+    nothing
+end

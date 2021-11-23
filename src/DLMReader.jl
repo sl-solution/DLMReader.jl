@@ -7,7 +7,8 @@ export filereader,
     # informats
     COMMA!,
     COMMAX!,
-    NUM_NA!
+    NUM_NA!,
+    CHAR_NA!
 
 include("linebuffer.jl")
 include("util.jl")
