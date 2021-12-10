@@ -1,7 +1,7 @@
 name = "DLMReader"
 uuid = "e1d33f9a-7203-49d2-8e1a-e3c4f85197b8"
 authors = ["sl-solution <github.sl.solution@icloud.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -11,7 +11,7 @@ InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 
 [compat]
 InlineStrings = "1.0"
-InMemoryDatasets = "0.3"
+InMemoryDatasets = ">=0.3"
 Reexport = "0.1, 0.2, 1"
 julia = "1.6"
 
