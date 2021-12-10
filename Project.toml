@@ -11,7 +11,7 @@ InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 
 [compat]
 InlineStrings = "1.0"
-InMemoryDatasets = ">=0.3"
+InMemoryDatasets = "0.3, 0.4"
 Reexport = "0.1, 0.2, 1"
 julia = "1.6"
 
