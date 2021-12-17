@@ -13,7 +13,7 @@ function WRITE_CHUNK(rchunk, f, ds, n, ff, delim, quotechar)
 end
 
 # basic function for writing csv files
-function filewriter(path::AbstractString, ds::Dataset; delim = ',', quotechar = nothing, mapformats = false)
+function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true)
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -24,20 +24,22 @@ function filewriter(path::AbstractString, ds::Dataset; delim = ',', quotechar = 
         ff = repeat([identity], ncols)
     end
     n, p = size(ds)
-    f = open(path, "w")
-    allnames = names(ds)
-    for j in 1:ncols
-        if quotechar !== nothing
-            write(f, quotechar)
-        end
-        write(f, allnames[j])
-        if quotechar !== nothing
-            write(f, quotechar)
-        end
-        if j == ncols
-            write(f, '\n')
-        else
-            write(f, delim)
+    f = open(path, write = true, append = append)
+    if header
+        allnames = names(ds)
+        for j in 1:ncols
+            if quotechar !== nothing
+                write(f, quotechar)
+            end
+            write(f, allnames[j])
+            if quotechar !== nothing
+                write(f, quotechar)
+            end
+            if j == ncols
+                write(f, '\n')
+            else
+                write(f, delim)
+            end
         end
     end
     if p < 1000
