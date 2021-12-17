@@ -22,8 +22,8 @@ function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <
 end
 
 
-function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Integer
-    val = Base.tryparse_internal(T, lbuff, cc, nd, 10, false)
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}; base = 10) where T <: Integer
+    val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = 0
     # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
     # (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
