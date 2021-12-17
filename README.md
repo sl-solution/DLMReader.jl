@@ -1,6 +1,6 @@
 # DLMReader
 
-An efficient multi-threaded package for reading delimited files. It designed as a file parser for `InMemoryDatasets.jl`.
+An efficient multi-threaded package for reading(writing) delimited files. It designed as a file parser for `InMemoryDatasets.jl`.
 
 The package supports:
 
@@ -10,6 +10,7 @@ The package supports:
 * using different eol character: e.g. having `;` as eol and `\n` as the column separator
 * using `informat`s: e.g. to be able to read lines like `$2,000;200;1` efficiently
 * parsing columns as `Date` with given set of `DateFormat`s
+* allow different `base` for parsing integers
 * ...
 
 ## Examples
