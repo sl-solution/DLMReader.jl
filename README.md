@@ -1,6 +1,6 @@
 # DLMReader
 
-An efficient multi-threaded package for reading delimited files. It designed as a file parser for `InMemoryDatasets.jl`.
+An efficient multi-threaded package for reading(writing) delimited files. It designed as a file parser for `InMemoryDatasets.jl`.
 
 The package supports:
 
