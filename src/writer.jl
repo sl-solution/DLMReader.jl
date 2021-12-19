@@ -100,7 +100,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         end
     end
     nrow_buff = div(buffsize, lsize)
-    nrow_buff == 0 && throw(ArgumentError("very wide data set, you need to manually adjust `buffsize`"))
+    nrow_buff == 0 && throw(ArgumentError("very wide data set! you need to manually adjust `buffsize` (and/or `lsize`)"))
     cs = min(nrow_buff, n)
     buff = Matrix{UInt8}(undef, lsize, cs)
     cur_pos = Vector{Int}(undef, cs)
