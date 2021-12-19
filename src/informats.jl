@@ -118,9 +118,9 @@ Base.@propagate_inbounds function BOOL!(x, lo, hi)
     end
     if length(lo:hi) == 1
         if x.data[lo] in (0x54, 0x74, 0x31)
-            x.data[lo] == 0x31
+            x.data[lo] = 0x31
         elseif x.data[lo] in (0x46, 0x66, 0x30)
-            x.data[lo] == 0x30
+            x.data[lo] = 0x30
         end
     elseif length(lo:hi) == 4
         if x.data[lo] in (0x54, 0x74) && x.data[lo+1] in (0x52,0x72) && x.data[lo+2] in (0x55, 0x75) && x.data[lo+3] in (0x45, 0x65)
@@ -136,10 +136,6 @@ Base.@propagate_inbounds function BOOL!(x, lo, hi)
             x.data[lo+2] = 0x20
             x.data[lo+3] = 0x20
             x.data[lo+4] = 0x20
-        end
-    else
-        for i in lo:hi
-            x.data[i] = 0x20
         end
     end
     nothing
