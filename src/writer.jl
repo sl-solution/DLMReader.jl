@@ -25,13 +25,17 @@ function _find_max_string_length(ds, delim, quotechar, mapformats)
     end
     n, p = size(ds)
     s = 0
+    cnt_str = 0
     for j in 1:ncols
         T = Core.Compiler.return_type(ff[j], (eltype(InMemoryDatasets._columns(ds)[j]), ))
         s += _string_size(InMemoryDatasets._columns(ds)[j], ff[j], nonmissingtype(T))
+        if nonmissingtype(T) <: AbstractString
+            cnt_str += 1
+        end
     end
     s += ncols*length(delim) + 1
     if quotechar != nothing
-        s += 2*ncols
+        s += 2*cnt_str
     end
     s + 1
 end
@@ -61,7 +65,7 @@ function WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
 end
 
 # basic function for writing csv files
-function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto)
+function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24)
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -72,8 +76,11 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         ff = repeat([identity], ncols)
     end
     n, p = size(ds)
-
-    lsize = _find_max_string_length(ds, UInt8.(delim), quotechar, mapformats)
+    if lsize == :auto
+        lsize = _find_max_string_length(ds, UInt8.(delim), quotechar, mapformats)
+    else
+        lsize = lsize
+    end
     f = open(path, write = true, append = append)
     if header
         allnames = names(ds)
@@ -92,32 +99,13 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
             end
         end
     end
-    if p < 100
-        cs = min(10000, n)
-        buff = Matrix{UInt8}(undef, lsize, cs)
-        cur_pos = Vector{Int32}(undef, cs)
-        lbuff = Vector{UInt8}(undef, lsize*cs)
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
-    elseif p<500
-        cs = min(5000, n)
-        buff = Matrix{UInt8}(undef, lsize, cs)
-        cur_pos = Vector{Int32}(undef, cs)
-        lbuff = Vector{UInt8}(undef, lsize*cs)
-
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
-    elseif p<5000
-        cs = min(1000, n)
-        buff = Matrix{UInt8}(undef, lsize, cs)
-        cur_pos = Vector{Int32}(undef, cs)
-        lbuff = Vector{UInt8}(undef, lsize*cs)
-
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
-    else
-        cs = min(100, n)
-        buff = Matrix{UInt8}(undef, lsize, cs)
-        cur_pos = Vector{Int}(undef, cs)
-        lbuff = Vector{UInt8}(undef, lsize*cs)
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
-    end
+    nrow_buff = div(buffsize, lsize)
+    nrow_buff == 0 && throw(ArgumentError("very wide data set, you need to manually adjust `buffsize`"))
+    cs = min(nrow_buff, n)
+    buff = Matrix{UInt8}(undef, lsize, cs)
+    cur_pos = Vector{Int}(undef, cs)
+    lbuff = Vector{UInt8}(undef, lsize*cs)
+    nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
+    WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
     close(f)
 end

@@ -94,6 +94,52 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     return 0
 
 end
+
+function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})
+    # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
+    # code == 33 ? res[current_line[]] = x : x = missing
+    newlo = cc
+    newhi = nd
+    for i in nd:-1:cc
+        lbuff[i] == 0x20 ? newhi -= 1 : break
+    end
+    l = newhi - newlo + 1
+    l == 0 ? res[current_line[]] = missing : res[current_line[]] = unsafe_string(pointer(lbuff, cc), l)
+    return 0
+end
+
+
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})
+    # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
+    # code == 33 ? res[current_line[]] = x : x = missing
+    flag = 0
+    newlo = cc
+    newhi = nd
+    for i in cc:nd
+        lbuff[i] == 0x20 ? newlo += 1 : break
+    end
+    for i in nd:-1:newlo
+        lbuff[i] == 0x20 ? newhi -= 1 : break
+    end
+    if length(newlo:newhi) == 1
+        if lbuff[newlo] == 0x30
+            res[current_line[]] = false
+        elseif lbuff[newlo] == 0x31
+            res[current_line[]] = true
+        else
+            res[current_line[]] = missing
+            flag = 1
+        end
+    elseif length(newlo:newhi) == 0
+        res[current_line[]] = missing
+    else
+        res[current_line[]] = missing
+        flag = 1
+    end
+
+    return flag
+
+end
 # function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
 #     (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd, Parsers.Options())
 #     code == 33 ? res[current_line[]] = x : x = missing
