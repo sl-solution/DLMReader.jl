@@ -94,8 +94,8 @@ const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt64}}, buffer, cc, en, current_line, UInt64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
         elseif types[j] <: Int128
             flag = buff_parser(res[j]::Vector{Union{Missing, Int128}}, buffer, cc, en, current_line, Int128; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: UInt128
-            flag = buff_parser(res[j]::Vector{Union{Missing, UInt128}}, buffer, cc, en, current_line, UInt128; base = int_bases === nothing ? 10 : int_bases[int_cnt])
+        elseif types[j] <: BigFloat
+            flag = buff_parser(res[j]::Vector{Union{Missing, BigFloat}}, buffer, cc, en, current_line, BigFloat)
         else # anything else
             flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, String)
         end

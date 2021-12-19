@@ -82,6 +82,31 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(Float32, lbuff, cc, nd)
     # code == 33 ? res[current_line[]] = x : x = missing
 end
+
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{BigFloat})
+    newlo = cc
+    newhi = nd
+    for i in cc:nd
+        lbuff[i] == 0x20 ? newlo += 1 : break
+    end
+    for i in nd:-1:newlo
+        lbuff[i] == 0x20 ? newhi -= 1 : break
+    end
+    if newhi-newlo+1 == 0
+        res[current_line[]] = missing
+        return 0
+    end
+    z = BigFloat(precision=Base.MPFR.DEFAULT_PRECISION[])
+    err = ccall((:mpfr_set_str, :libmpfr), Int32, (Ref{BigFloat}, Cstring, Int32, Base.MPFR.MPFRRoundingMode), z, SubString(lbuff, newlo, newhi), 0, Base.MPFR.ROUNDING_MODE[])
+    if err == 0
+        res[current_line[]] = z
+        return 0
+    else
+        res[current_line[]] = missing
+        return 1
+    end
+end
+
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
     # code == 33 ? res[current_line[]] = x : x = missing
