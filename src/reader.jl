@@ -519,6 +519,7 @@ end
 
 
 function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}(), warn = 20, eolwarn = true, emptycolname = false, int_base = Dict{Int, Tuple{DataType, Int}}(), string_trim = false)
+    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float16, Float32, Float64, Int128, UInt128, BigFloat, String, Characters, InlineStrings, TimeType]
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
     number_of_errors_happen_so_far[] = 0
     if quotechar !== nothing
@@ -558,6 +559,7 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
     else
         int_bases = nothing
     end
+    !all(intypes .∈ Ref(Set(supported_types))) && throw(ArgumentError("DLMReaser only supports the following types(and their Subtypes): $(supported_types)"))
     !all(isascii.(delimiter)) && throw(ArgumentError("delimiter must be ASCII"))
     distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim)
 end
