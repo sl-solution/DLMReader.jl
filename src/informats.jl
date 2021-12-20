@@ -1,8 +1,8 @@
 # This file contains some popular informats
 # This is experimental currently
 
-# In general any function defined as informat must have these specification:
-# * it must take three positional argument, x, lo, hi, where x is a custom structure and x.data is a vector of UInt8
+# In general any function defined as informat must have these specifications:
+# * it must take three positional arguments, x, lo, hi, where x is a custom structure and x.data is a vector of UInt8
 # * function can change the values of x.data but only within lo:hi
 # * function must do the operations in place and return nothing
 
