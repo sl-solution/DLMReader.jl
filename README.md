@@ -1,9 +1,14 @@
 # DLMReader
 
-An efficient multi-threaded package for reading(writing) delimited files. It designed as a file parser for `InMemoryDatasets.jl`.
+An efficient multi-threaded package for reading(writing) delimited files. It is designed as a file parser for `InMemoryDatasets.jl`.
+
+> DLMReader writes and reads AbstractDatasets types, i.e. other types must be converted to/from AbstractDatasets.
+
+It works very well for huge files (long or/and wide).
 
 The package supports:
 
+* allow controlling the line size and buffer size for giving extra flexibility to read/write very wide data
 * alternative delimiter: e.g. reading `2,3;4,5` where `,` or `;` is the column separator
 * string as delimiter: e.g. having `::` as column separator
 * fixed width column: e.g. reading `2  3,4,5` where the first column is located at characters `1:3`, but the rest of columns are separated by `,`
