@@ -403,15 +403,20 @@ _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateForma
 
 @inline function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
     txt = "\n"
-    for j in 1:length(col)
+    last_col = min(length(col), 20)
+    for j in 1:last_col
         txt *= string(col[j])
         txt *= "::" * string(nonmissingtype(eltype(res[j])))
         txt *= " = "
         txt *= string(res[j][cur_l])
-        if j < length(col)
+        if j < last_col
             txt *= ", "
         else
-            txt *= "\n"
+            if last_col < length(col)
+                txt *= " ...(some warning messages are omitted) \n"
+            else
+                txt *= "\n"
+            end
         end
     end
     txt *= unsafe_string(pointer(buff, l_st), l_en - l_st + 1)
