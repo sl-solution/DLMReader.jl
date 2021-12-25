@@ -112,5 +112,5 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         close(f)
         rethrow(e)
     end
-    nothing
+    close(f)
 end
