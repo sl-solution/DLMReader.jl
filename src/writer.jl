@@ -82,30 +82,35 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         lsize = lsize
     end
     f = open(path, write = true, append = append)
-    if header
-        allnames = names(ds)
-        for j in 1:ncols
-            if quotechar !== nothing
-                write(f, quotechar)
-            end
-            write(f, allnames[j])
-            if quotechar !== nothing
-                write(f, quotechar)
-            end
-            if j == ncols
-                write(f, '\n')
-            else
-                write(f, delim)
+    try
+        if header
+            allnames = names(ds)
+            for j in 1:ncols
+                if quotechar !== nothing
+                    write(f, quotechar)
+                end
+                write(f, allnames[j])
+                if quotechar !== nothing
+                    write(f, quotechar)
+                end
+                if j == ncols
+                    write(f, '\n')
+                else
+                    write(f, delim)
+                end
             end
         end
+        nrow_buff = div(buffsize, lsize)
+        nrow_buff == 0 && throw(ArgumentError("very wide data set! you need to manually adjust `buffsize` (and/or `lsize`)"))
+        cs = min(nrow_buff, n)
+        buff = Matrix{UInt8}(undef, lsize, cs)
+        cur_pos = Vector{Int}(undef, cs)
+        lbuff = Vector{UInt8}(undef, lsize*cs)
+        nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
+        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
+    catch e
+        close(f)
+        rethrow(e)
     end
-    nrow_buff = div(buffsize, lsize)
-    nrow_buff == 0 && throw(ArgumentError("very wide data set! you need to manually adjust `buffsize` (and/or `lsize`)"))
-    cs = min(nrow_buff, n)
-    buff = Matrix{UInt8}(undef, lsize, cs)
-    cur_pos = Vector{Int}(undef, cs)
-    lbuff = Vector{UInt8}(undef, lsize*cs)
-    nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
-    WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
-    close(f)
+    nothing
 end
