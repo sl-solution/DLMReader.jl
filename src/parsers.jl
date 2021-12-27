@@ -113,7 +113,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
     l = nd - cc + 1
     cnt = 0
     for i in cc:nd
-        cnt += lbuff[i] == 0x20
+        cnt += lbuff[i] === 0x20
     end
     l == 0 || l == cnt ? res[current_line[]] = missing : res[current_line[]] = unsafe_string(pointer(lbuff, cc), l)
     return 0

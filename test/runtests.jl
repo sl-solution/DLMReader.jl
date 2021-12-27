@@ -1,6 +1,31 @@
 using DLMReader
 using Test
-
+dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
 @testset "DLMReader.jl" begin
-    # Write your tests here.
+    ds = filereader(IOBuffer("a,b\n1,,,2\n3,,,,,,,4\n"), ignorerepeated = true, header = true)
+    @test ds == Dataset(a=[1,3], b=[2,4])
+    ds = filereader(IOBuffer("a,b\n1,,,2\n3,,,,,,,4.1\n"), ignorerepeated = true, header = true)
+    @test ds == Dataset(a=[1,3], b=[2,4.1])
+    ds = filereader(IOBuffer("""a,b\n1,,,"HL, WORLD"\n3,,,,,,,"XY"\n"""), ignorerepeated = true, header = true, quotechar = '"')
+    @test ds == Dataset(a = [1,3], b = ["HL, WORLD", "XY"])
+    ds = filereader(IOBuffer("""a\tb\n1\t\t\t"HL, WORLD"\n3\t\t\t\t\t\t\t"XY"\n"""), ignorerepeated = true, header = true, quotechar = '"', delimiter = '\t')
+    @test ds == Dataset(a = [1,3], b = ["HL, WORLD", "XY"])
+    ds = filereader(joinpath(dir, "repeat1.csv"), ignorerepeated = true, header = true, quotechar = '"', delimiter = '\t')
+    @test ds == Dataset(a = [1,3], b = ["HL, \"WORLD\"", "XY"])
+    ds = filereader(joinpath(dir, "repeat2.csv"), ignorerepeated = true, header = true, quotechar = '"', escapechar = '"', delimiter = '\t')
+    @test ds == Dataset(a = [1,3], b = ["HL, \"WORLD\"", "XY"])
+    ds = filereader(IOBuffer("a,b\n1,2\n"), header = false)
+    @test ds == Dataset(x1=["a","1"], x2=["b","2"])
+    ds = filereader(joinpath(dir, "d2.csv"), dtformat = Dict(3=>dateformat"y-m-d"))
+    @test ds == Dataset(a = [1,2,2,1], b=[2,3,4,2], c = Date.([missing, "2001-01-02", "2020-04-02", "2000-12-01"]))
+    ds = filereader(joinpath(dir, "dlmstr.csv"), dlmstr = "::")
+    @test ds == Dataset(a=[12,12], b=[1345,13], C=[15,15], DD=[15,1])
+    ds = filereader(joinpath(dir, "dollar.csv"), header = false, delimiter = ' ', informat = Dict(2=>COMMA!))
+    @test ds == Dataset(x1 =["id1","id2","id3"], x2=[2000000,34000, missing], x3=[3,4,1])
+    ds = filereader(joinpath(dir, "dollar2.csv"), header = false, delimiter=';', informat = Dict(1:2 .=> COMMA!))
+    @test ds == Dataset(x1=[1000, 123000,1000], x2=[2000,2,2000], x3=["Hi", "Boy", "Hi"])
+    ds = filereader(joinpath(dir, "multi.dat"), delimiter = [',',':',';'])
+    @test ds == Dataset(x1=[1,2], x2=[2,4],x3=[123,4], x4=[3,5])
+    ds = filereader(joinpath(dir, "t.txt"), dlmstr = "::;;:", quotechar = '"', escapechar = '"')
+    @test ds == Dataset(x1 =["this is tha\" and this", "th\"at\"", missing], x2=[23,25,544],x3=[45,35,454])
 end

@@ -104,7 +104,7 @@ end
 
 
 
-@inline function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim)
+@inline function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -136,9 +136,12 @@ end
             # if there is no fixed width information for the current column
             if fixed === 0:0 || fixed[j].start === 0
                 if quotechar !== nothing
-                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, quotechar, escapechar)
+                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, quotechar, escapechar, ignorerepeated)
+                    if new_lo != 0 && new_hi != 0 && new_lo <= new_hi
+                        new_lo, new_hi = clean_escapechar!(buffer, new_lo, new_hi, quotechar, escapechar)
+                    end
                 else
-                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr)
+                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
                 end
                 # we should have a strategy for this kind of problem, for now just let the end of line as endpoint
                 dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
@@ -180,9 +183,9 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false)
 
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
     try
         if dlmstr === nothing
             dlm = UInt8.(delimiter)
@@ -247,21 +250,21 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                 last_valid_buff = buffsize - (cur_position - hi + 1)
             end
 
-            _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim)
+            _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated)
             # we need to break at some point
             last_line && break
         end
     catch e
-        close(f)
+        CLOSE(f)
         rethrow(e)
     end
-    close(f)
+    CLOSE(f)
     res
 end
 
 
 # main distributer
-function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false)
+function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false)
     eol = UInt8.(linebreak)
     eol_first = first(eol)
     eol_last = last(eol)
@@ -279,28 +282,27 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         colwidth = 0:0
     end
 
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
     # generating varnames
     f_pos = 0
     if (header isa AbstractVector) && (eltype(header) <: Union{AbstractString, Symbol})
-        colnames = header
+        # colnames = header
+        colnames = InMemoryDatasets.make_unique(header; makeunique = makeunique)
     elseif header === true
         f_pos, colnames = _generate_colname_based(path, eol, 1, lsize, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, emptycolname)
+        colnames = InMemoryDatasets.make_unique(colnames; makeunique = makeunique)
     elseif header === false
         colnames = ["x"*string(k) for k in 1:length(types)]
     else
         throw(ArgumentError("`header` can be true or false, or a list of variable names"))
     end
-    if header !== false
-        @assert unique(colnames) == colnames "Duplicated column name has been detected. Passing `header = false` may resolve it."
-    end
 
     # how many bytes we should skip - we should use this information to have a better distribution of file into nt chunks.
     skip_bytes = f_pos
-    fs = filesize(f)
+    fs = FILESIZE(f)
     initial_guess_for_row_num = fs/lsize_estimate
     _check_nt_possible_size = div(fs, buffsize)
-    if !threads || fs < 10^6 || div(fs, Threads.nthreads()) < lsize_estimate
+    if !threads || fs < 10^6 || div(fs, Threads.nthreads()) < lsize_estimate || path isa IOBuffer
         nt = 1
     else
         if _check_nt_possible_size > 0
@@ -376,21 +378,21 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     res = Any[allocatecol_for_res(types[i], sum(ns)) for i in 1:length(types)]
     line_hi = cumsum(ns)
     line_lo = [1; line_hi[1:end] .+ 1]
-    close(f)
+    CLOSE(f)
     if nt > 1
         Threads.@threads for i in 1:nt
-            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim)
+            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated)
         end
     else
         for i in 1:nt
-            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim)
+            readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated)
         end
     end
-    Dataset(res, colnames, copycols = false)
+    Dataset(res, colnames, copycols = false, makeunique = makeunique)
 end
 
 
-function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, eolwarn = false)
+function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false)
 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
@@ -408,7 +410,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     end
     read_byte_val = Vector{UInt8}(undef, eol_len)
 
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
 
 
     cnt = 1
@@ -420,7 +422,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     else
         colwidth = 0:0
     end
-    l_length, f_pos = read_one_line(path, 1, filesize(f), eol)
+    l_length, f_pos = read_one_line(path, 1, FILESIZE(f), eol)
     if l_length > lsize
         throw(ArgumentError("very wide delimited file! you need to set `lsize` and `buffsize` argument with larger values,  they are currently set as $lsize and $buffsize respectively. It is also recommended to use lower number of `guessingrows`"))
     end
@@ -439,9 +441,9 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
             push!(colwidth, col_width)
         else
             if quotechar !== nothing
-                new_dlm_pos, new_lo, new_hi = find_next_delim(a_line_buff, nb_pos+1, l_length, dlm, dlmstr, quotechar, escapechar)
+                new_dlm_pos, new_lo, new_hi = find_next_delim(a_line_buff, nb_pos+1, l_length, dlm, dlmstr, quotechar, escapechar, ignorerepeated)
             else
-                new_dlm_pos,new_lo, new_hi = find_next_delim(a_line_buff, nb_pos+1, l_length, dlm, dlmstr)
+                new_dlm_pos,new_lo, new_hi = find_next_delim(a_line_buff, nb_pos+1, l_length, dlm, dlmstr, ignorerepeated)
             end
             if new_dlm_pos > 0
                 n_cols += 1
@@ -468,7 +470,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     l_length = 1
     file_pos = max(0, lo - 1)
     while l_length>0
-        l_length, file_pos = read_one_line(path, file_pos+1, filesize(f), eol)
+        l_length, file_pos = read_one_line(path, file_pos+1, FILESIZE(f), eol)
         if l_length > 0
             rows_in += 1
         end
@@ -477,7 +479,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     hi = file_pos
     types = repeat([String], n_cols)
     res = [allocatecol_for_res(String, rows_in) for _ in 1:n_cols]
-    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar, eolwarn = eolwarn)
+    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar, eolwarn = eolwarn, ignorerepeated = ignorerepeated)
     outtypes = Vector{DataType}(undef, n_cols)
     if !(dtformat isa Dict)
         for j in 1:n_cols
@@ -513,14 +515,18 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
             end
         end
     end
-    close(f)
+    CLOSE(f)
     linebreak, outtypes
 end
 
 
-function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}(), warn = 20, eolwarn = true, emptycolname = false, int_base = Dict{Int, Tuple{DataType, Int}}(), string_trim = false)
+function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}(), warn = 20, eolwarn = true, emptycolname = false, int_base = Dict{Int, Tuple{DataType, Int}}(), string_trim = false, makeunique = false, ignorerepeated = false)
     supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float16, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127,  Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String]
+
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
+    ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
+    ignorerepeated && length(delimiter)>1 && throw(ArgumentError("`ignorerepeated` option cannot be used when there are more than one delimiter"))
+
     number_of_errors_happen_so_far[] = 0
     if quotechar !== nothing
         quotechar = UInt8(quotechar)
@@ -531,7 +537,7 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
         end
     end
     if types === nothing || types isa Dict
-        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, eolwarn = false)
+        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, eolwarn = false, ignorerepeated = ignorerepeated)
         if types isa Dict
             for (k, v) in types
                 intypes[k] = v
@@ -561,5 +567,5 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
     end
     !all(intypes .∈ Ref(Set(supported_types))) && throw(ArgumentError("DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters, InlineStrings, TimeType, String"))
     !all(isascii.(delimiter)) && throw(ArgumentError("delimiter must be ASCII"))
-    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim)
+    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated)
 end

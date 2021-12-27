@@ -14,10 +14,22 @@ function find_end_of_line(buff, lo, hi, eol)
     return hi
 end
 
-@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr)
+@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, ignorerepeated)
     if dlmstr === nothing
-        @inbounds for i in lo:hi
-            buffer[i] in dlm && return i,0,0
+        i = lo
+        new_hi = hi
+        @inbounds while true
+            if buffer[i] in dlm
+                new_hi = i-1
+                while ignorerepeated
+                    i += 1
+                    i > hi && return i-1,0,new_hi
+                    !(buffer[i] in dlm) && return i-1,0,new_hi
+                end
+                return i,0,0
+            end
+            i += 1
+            i > hi && break
         end
     else
         dlmstr_len = length(dlm)
@@ -40,7 +52,7 @@ end
 end
 
 # this needs refactoring
-@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc)
+@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc, ignorerepeated)
     new_lo = 0
     new_hi = 0
     if dlmstr === nothing || length(dlm) == 1
@@ -62,6 +74,14 @@ end
                 end
             end
             if buffer[i] in dlm
+                if new_hi == 0
+                    new_hi = i-1
+                end
+                while ignorerepeated
+                    i += 1
+                    i > hi && return i-1,new_lo, new_hi
+                    !(buffer[i] in dlm) && return i-1,new_lo, new_hi
+                end
                 return i,new_lo,new_hi
             end
             i += 1
@@ -125,38 +145,57 @@ end
             buffer[i] == qut && buffer[i-1] != qutesc && return i
         end
     else
-        for i in lo:hi
+        q_cnt = 0
+        for i in lo:hi-1
             if buffer[i] == qut
-                if i < hi && i > lo+1 #interior
-                    buffer[i+1] != qut && buffer[i-1] != qut && return i
-                elseif i <= lo + 1 && i < hi
-                    buffer[i+1] != qut && return i
-                elseif i == hi && i > lo + 1
-                    return i
-                elseif i == hi
-                    return i
+                q_cnt += 1
+                if buffer[i+1] == qut
+
+                else
+                    isodd(q_cnt) && return i
                 end
             end
         end
+        buffer[hi] == qut && return hi
     end
-    return 0
+    0
 end
+#
+#                 while true
+#                     if buffer[i]
+#                 if i < hi && i > lo+1 #interior
+#                     buffer[i+1] != qut && buffer[i-1] != qut && return i
+#                 elseif i <= lo + 1 && i < hi
+#                     buffer[i+1] != qut && return i
+#                 elseif i == hi && i > lo + 1
+#                     return i
+#                 elseif i == hi
+#                     return i
+#                 end
+#             end
+#         end
+#     end
+#     return 0
+# end
 
-#basic idea to remove escapechar
-function remove_escape_char(buffer, lo, hi, qut, qutesc)
-    cnt = lo
-    for i in lo:hi
-        if buffer[i] == qut
-            cnt -= 1
-            buffer[cnt] = buffer[i]
+
+@inline function clean_escapechar!(buffer, lo, hi, qut, qutesc)
+    cnt = hi
+    i = hi
+    flag = false
+    @inbounds while true
+        if buffer[i] === qut
+            buffer.data[cnt] = buffer.data[i]
+            i -= 2
         else
-            buffer[cnt] = buffer[i]
+            buffer.data[cnt] = buffer.data[i]
+            i -= 1
         end
-        cnt += 1
+        cnt -= 1
+        (cnt < lo || i < lo) && break
     end
-    lo, cnt - 1
+    cnt+1, hi
 end
-
 
 # when eol is \r\n
 @inline function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
@@ -245,7 +284,7 @@ end
 
 
 function count_lines_of_file(path, lo, hi, eol)
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
     eol_last = last(eol)
     eol_first = first(eol)
     eol_len = length(eol)
@@ -272,13 +311,13 @@ function count_lines_of_file(path, lo, hi, eol)
     if eof(f) && nb > 0 && (a[nb] != eol_last || a[nb - eol_len + 1] != eol_first)
         nl += 1 # final line is not terminated with eol
     end
-    close(f)
+    CLOSE(f)
     nl
 end
 
 
 function estimate_linesize(path, eol, lsize; guessingrows = 20)
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
     try
         _tmp_line = Vector{UInt8}(undef, lsize*guessingrows)
         line_estimate = 0
@@ -302,13 +341,13 @@ function estimate_linesize(path, eol, lsize; guessingrows = 20)
         end
         line_estimate
     catch e
-        close(f)
+        CLOSE(f)
         rethrow(e)
     end
 end
 
 function read_one_line(path, lo, hi, eol)
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
     try
         _tmp_line = Vector{UInt8}(undef, 8192)
 
@@ -340,11 +379,11 @@ function read_one_line(path, lo, hi, eol)
             end
             reached_eol && break
         end
-        close(f)
+        CLOSE(f)
         # length of line and position of file at the end of line
         (l_len, lo+l_len-1)
     catch e
-        close(f)
+        CLOSE(f)
         rethrow(e)
     end
 end
@@ -373,7 +412,7 @@ function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, lin
 end
 
 function guess_eol_char(path)
-    f = open(path, "r")
+    f = OUR_OPEN(path, read = true)
 
     LF = UInt8('\n')
     CR = UInt8('\r')
@@ -383,15 +422,15 @@ function guess_eol_char(path)
         nb = readbytes!(f, a)
         for i in 1:nb
             if a[i] == LF && a[i-1] == CR
-                close(f)
+                CLOSE(f)
                 return ['\r', '\n']
             elseif a[i] == LF
-                close(f)
+                CLOSE(f)
                 return '\n'
             end
         end
     end
-    close(f)
+    CLOSE(f)
     throw(ArgumentError("end of line is not detectable, set `linebreak` argument manually"))
 end
 
@@ -421,3 +460,22 @@ _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateForma
     end
     txt *= unsafe_string(pointer(buff, l_st), l_en - l_st + 1)
 end
+
+function OUR_OPEN(path; kwargs...)
+    if path isa AbstractString
+        open(path; kwargs...)
+    elseif path isa IOBuffer
+        path.readable = true
+        path.writable = false
+        path.seekable = true
+        path.size = length(path.data)
+        seek(path,0)
+        # OUR_IOBUFF(path.data, 0)
+    end
+end
+
+FILESIZE(f) = filesize(f)
+FILESIZE(f::IOBuffer) = f.size
+
+CLOSE(f) = close(f)
+CLOSE(x::IOBuffer) = seek(x, 0)
