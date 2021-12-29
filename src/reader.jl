@@ -662,9 +662,6 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
     !all(isascii.(delimiter)) && throw(ArgumentError("delimiter must be ASCII"))
 
     if multiple_obs
-        if threads
-            @warn "When `multiple_obs = true` the parsing is done in a single thread"
-        end
         if header == true
             throw(ArgumentError("`filereader` doesn't support reading header from file when `multiple_obs = true`"))
         end
