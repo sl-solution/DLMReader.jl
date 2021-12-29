@@ -97,7 +97,11 @@ julai> filereader("ex6.csv", delimiter = ' ', informat = Dict(2=>COMMA!), header
 ## Extra examples
 
 ```julia
-julia> filereader(IOBuffer("1,2,3,4,5\n6,7,8\n10\n"), header = [:x1, :x2], types = [Int, Int], multiple_obs = true, threads = false)
+julia> filereader(IOBuffer("1,2,3,4,5\n6,7,8\n10\n"),
+                  header = [:x1, :x2],
+                  types = [Int, Int],
+                  multiple_obs = true,
+                  threads = false)
 5×2 Dataset
  Row │ x1        x2       
      │ identity  identity
