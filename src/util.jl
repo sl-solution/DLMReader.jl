@@ -389,10 +389,10 @@ function read_one_line(path, lo, hi, eol)
 end
 
 
-function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, autogen)
+function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, autogen, ignorerepeated, multiple_obs)
     _lvarnames, f_pos = read_one_line(path, lo, hi, eol)
     _varnames = [Vector{Union{String, Missing}}(undef, 1) for _ in 1:length(types)]
-    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar)
+    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs)
     varnames = Vector{String}(undef, length(types))
     cnter = 1
     for i in 1:length(_varnames)
