@@ -8,7 +8,7 @@ It works very well for huge files (long or/and wide).
 
 The package supports:
 
-* reading multiple observations per line
+* reading multiple observations per line: e.g. reading `1,2,3,4,5\n6,7,8\n10`
 * allow controlling the line size and buffer size for giving extra flexibility to read/write very wide data
 * alternative delimiter: e.g. reading `2,3;4,5` where `,` or `;` is the column separator
 * string as delimiter: e.g. having `::` as column separator
