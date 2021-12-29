@@ -187,7 +187,12 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Inl
     if cc>nd
         res[current_line[]] = missing
     else
-        res[current_line[]] = T(lbuff, cc, nd-cc+1)
+        l = nd - cc + 1
+        cnt = 0
+        for i in cc:nd
+            cnt += lbuff[i] === 0x20
+        end
+        l == cnt ? res[current_line[]] = missing : res[current_line[]] = T(lbuff, cc, nd-cc+1)
     end
     return 0
 end
@@ -195,7 +200,12 @@ function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) whe
     if cc>nd
         res[current_line[]] = missing
     else
-        res[current_line[]] = T(lbuff, char_buff, cc, nd)
+        l = nd - cc + 1
+        cnt = 0
+        for i in cc:nd
+            cnt += lbuff[i] === 0x20
+        end
+        l == cnt ? res[current_line[]] = missing : res[current_line[]] = T(lbuff, char_buff, cc, nd)
     end
     return 0
 end
