@@ -83,13 +83,13 @@ id3 $200,000 1
 And the code to read them into Julia
 
 ```julia
-julai> using DLMReader
-julai> filereader("ex1.csv", dtformat = Dict(3 => dateformat"y-m-d"))
-julai> filereader("ex2.csv", dlmstr = "::")
-julai> filereader("ex3.csv", types = [Int, Int, Int], header = false, linebreak = ';', delimiter = '\n')
-julai> filereader("ex4.csv", fixed = Dict(1 => 1:4), header = false)
-julai> filereader("ex5.csv", delimiter = [';', ':', ','])
-julai> filereader("ex6.csv", delimiter = ' ', informat = Dict(2=>COMMA!), header = [:ID, :price, :quarter])
+julia> using DLMReader
+julia> filereader("ex1.csv", dtformat = Dict(3 => dateformat"y-m-d"))
+julia> filereader("ex2.csv", dlmstr = "::")
+julia> filereader("ex3.csv", types = [Int, Int, Int], header = false, linebreak = ';', delimiter = '\n')
+julia> filereader("ex4.csv", fixed = Dict(1 => 1:4), header = false)
+julia> filereader("ex5.csv", delimiter = [';', ':', ','])
+julia> filereader("ex6.csv", delimiter = ' ', informat = Dict(2=>COMMA!), header = [:ID, :price, :quarter])
 ```
 
 `COMMA!` is a built-in informat which removes the comma from numbers. If number contains dollar or sterling signs, it also removes them. The trimed text is sent to the parser for converting to a number.
