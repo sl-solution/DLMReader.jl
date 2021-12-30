@@ -316,9 +316,10 @@ function count_lines_of_file(path, lo, hi, eol)
 end
 
 
-function estimate_linesize(path, eol, lsize; guessingrows = 20)
+function estimate_linesize(path, eol, lsize, lo; guessingrows = 20)
     f = OUR_OPEN(path, read = true)
     try
+        seek(f, max(0, lo-1))
         _tmp_line = Vector{UInt8}(undef, lsize*guessingrows)
         line_estimate = 0
         cnt = 1
@@ -357,7 +358,6 @@ function read_one_line(path, lo, hi, eol)
         eol_last = last(eol)
         eol_len = length(eol)
 
-        f_pos = 0
 
         l_len = 0
         reached_eol = false
@@ -382,6 +382,66 @@ function read_one_line(path, lo, hi, eol)
         CLOSE(f)
         # length of line and position of file at the end of line
         (l_len, lo+l_len-1)
+    catch e
+        CLOSE(f)
+        rethrow(e)
+    end
+end
+
+# we assume eol is maximum 2 characters
+function read_multiple_lines(path, lo, hi, eol, howmany)
+    f = OUR_OPEN(path, read = true)
+    cnt = 0
+    try
+        _tmp_line = Vector{UInt8}(undef, 8192)
+
+        seek(f, max(0, lo - 1))
+
+        eol_first = first(eol)
+        eol_last = last(eol)
+        eol_len = length(eol)
+
+
+        l_len = 0
+        _cond1_ = false
+        _cond2_ = false
+        while !eof(f)
+            nb = readbytes!(f, _tmp_line)
+            cur_position = position(f)
+            if cur_position > hi
+                last_nb = nb - (cur_position - hi)
+            else
+                last_nb = nb
+            end
+            i = 1
+            while true
+                # or i in eol_len:last_nb
+                l_len += 1
+                if _tmp_line[i] == eol_first
+                    _cond1_ = true
+                end
+                if _tmp_line[i] == eol_last
+                    _cond2_ = true
+                end
+                if _cond1_ && _cond2_ 
+                    cnt += 1
+                    if cnt >= howmany
+                        CLOSE(f)
+                        return (l_len, lo+l_len)
+                    end
+                    _cond1_ = false
+                    _cond2_ = false
+                end
+                if _cond2_ && !_cond1_
+                    _cond2_ = false
+                end
+                i += 1
+                i > last_nb && break
+            end
+        end
+        CLOSE(f)
+        # length of line and position of file at the end of line
+        (l_len, lo+l_len)
     catch e
         CLOSE(f)
         rethrow(e)

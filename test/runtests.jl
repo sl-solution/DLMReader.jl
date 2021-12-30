@@ -28,6 +28,18 @@ dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
     @test ds == Dataset(x1=[1,2], x2=[2,4],x3=[123,4], x4=[3,5])
     ds = filereader(joinpath(dir, "t.txt"), dlmstr = "::;;:", quotechar = '"', escapechar = '"', header = false)
     @test ds == Dataset(x1 =["this is tha\" and this", "th\"at\"", missing], x2=[23,25,544],x3=[45,35,454])
+    ds = Dataset(x1 = "id" .* string.(rand(1:10, 10000)), x2 = rand(1:100000, 10000), x3 = 1:10000)
+    map!(ds, x->rand()<.1 ? missing : x, 1:2)
+    _tmp_file = tempname()
+    filewriter(_tmp_file, ds, header = false)
+    ds2 = filereader(_tmp_file, types = [String, Int, Int], header =false)
+    @test ds == ds2
+    for i in 1:100
+        r_loc = rand(1:10000)
+        ds3 = filereader(_tmp_file, types = [String, Int, Int], header =false, skipto = r_loc, limit = 5000)
+        @test ds3[1, 3] == r_loc
+        @test ds3[end, 3] == min(r_loc+5000-1, nrow(ds))
+    end
 end
 
 @testset "multiple observations per line" begin
