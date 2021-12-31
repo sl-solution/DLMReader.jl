@@ -441,7 +441,8 @@ function read_multiple_lines(path, lo, hi, eol, howmany)
         end
         CLOSE(f)
         # length of line and position of file at the end of line
-        (l_len, lo+l_len)
+        # (l_len, lo+l_len)
+        throw(ArgumentError("There are fewer than $(howmany) lines in the input file."))
     catch e
         CLOSE(f)
         rethrow(e)
