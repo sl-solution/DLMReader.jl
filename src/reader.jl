@@ -702,7 +702,7 @@ function filereader(path; types = nothing, delimiter = ',', linebreak = nothing,
             throw(ArgumentError("`filereader` doesn't support reading header from file when `multiple_obs = true`"))
         end
         if skipto != 1
-            throw(ArgumentError("`filereader doesn't support `skipto` option when `multiple_obs = true`"))
+            throw(ArgumentError("`filereader` doesn't support `skipto` option when `multiple_obs = true`"))
         end
     end
 
