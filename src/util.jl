@@ -283,7 +283,7 @@ end
 
 
 
-function count_lines_of_file(path, lo, hi, eol)
+function count_lines_of_file(path, lo, hi, eol; limit = typemax(Int))
     f = OUR_OPEN(path, read = true)
     eol_last = last(eol)
     eol_first = first(eol)
@@ -306,7 +306,9 @@ function count_lines_of_file(path, lo, hi, eol)
         end
         for i=eol_len:last_nb
             nl += (a[i] == eol_last && a[i - eol_len + 1] == eol_first)
+            nl > limit && break
         end
+        nl > limit && break
     end
     if eof(f) && nb > 0 && (a[nb] != eol_last || a[nb - eol_len + 1] != eol_first)
         nl += 1 # final line is not terminated with eol

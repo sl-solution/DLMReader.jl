@@ -395,7 +395,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         fs = FILESIZE(f)
         initial_guess_for_row_num = (fs-skip_bytes)/lsize_estimate
         _check_nt_possible_size = div(fs-skip_bytes, buffsize)
-        if !threads || fs-skip_bytes < 10^6 || div(fs-skip_bytes, Threads.nthreads()) < lsize_estimate || path isa IOBuffer
+        if !threads || fs-skip_bytes < 10^6 || div(fs-skip_bytes, Threads.nthreads()) < lsize_estimate || path isa IOBuffer || big(limit)*lsize_estimate < 10^7
             nt = 1
         else
             if _check_nt_possible_size > 0
@@ -469,7 +469,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
             end
         else
             for i in 1:nt
-                ns[i] = count_lines_of_file(path, lo[i], hi[i], eol)
+                ns[i] = count_lines_of_file(path, lo[i], hi[i], eol; limit = limit)
             end
         end
 
@@ -641,7 +641,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
 end
 
 
-function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize = 2^15, informat = Dict{Int, Function}(), warn = 20, eolwarn = true, emptycolname = false, int_base = Dict{Int, Tuple{DataType, Int}}(), string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int))
+function filereader(path; types = nothing, delimiter = ',', linebreak = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed = 0:0, buffsize::Int = 2^16, quotechar = nothing, escapechar = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr = nothing, lsize::Int = 2^15, informat = Dict{Int, Function}(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int))
     supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float16, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127,  Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String]
 
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
