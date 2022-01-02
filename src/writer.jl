@@ -1,19 +1,31 @@
 # some idea to reduce allocation - Not ok yet
-_string_size(x, f, ::Type{T}) where T <: InMemoryDatasets.FLOATS = Base.Ryu.neededdigits(T)
+_string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.FLOATS = Base.Ryu.neededdigits(T)
 
 _ndigits(x) = ndigits(x)
 _ndigits(::Missing) = 0
-_string_size(x, f, ::Type{T}) where T <: InMemoryDatasets.INTEGERS = InMemoryDatasets.hp_maximum(_ndigits∘f, x) + 1
-_string_size(x, f, ::Type{T}) where T <: Bool = 1
-_string_size(x, f, ::Type{T}) where T <: Characters{M, UInt8} where M= M
+function _string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.INTEGERS
+    if threads
+        InMemoryDatasets.hp_maximum(_ndigits∘f, x) + 1
+    else
+        InMemoryDatasets.stat_maximum(_ndigits∘f, x) + 1
+    end
+end
+_string_size(x, f, threads, ::Type{T}) where T <: Bool = 1
+_string_size(x, f, threads, ::Type{T}) where T <: Characters{M, UInt8} where M= M
 
 _STRING_L(x) = length(string(x))
 _STRING_L(::Missing) = 0
-_string_size(x, f, ::Type{T}) where T <: Any = InMemoryDatasets.hp_maximum(_STRING_L∘f, x)
+function _string_size(x, f, threads, ::Type{T}) where T <: Any
+    if threads
+        InMemoryDatasets.hp_maximum(_STRING_L∘f, x)
+    else
+        InMemoryDatasets.stat_maximum(_STRING_L∘f, x)
+    end
+end
 
 
 
-function _find_max_string_length(ds, delim, quotechar, mapformats)
+function _find_max_string_length(ds, delim, quotechar, mapformats, threads)
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -28,7 +40,7 @@ function _find_max_string_length(ds, delim, quotechar, mapformats)
     cnt_str = 0
     for j in 1:ncols
         T = Core.Compiler.return_type(ff[j], (eltype(InMemoryDatasets._columns(ds)[j]), ))
-        s += _string_size(InMemoryDatasets._columns(ds)[j], ff[j], nonmissingtype(T))
+        s += _string_size(InMemoryDatasets._columns(ds)[j], ff[j], threads, nonmissingtype(T))
         if nonmissingtype(T) <: AbstractString
             cnt_str += 1
         end
@@ -51,21 +63,21 @@ function WRITE(f, buff, cur_pos, lbuff, lastvalid = length(cur_pos))
     write(f, view(lbuff, 1:offset-1))
 end
 
-function WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
+function WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar, threads)
     rchunk = length(cur_pos)
     chunk = div(n, rchunk)
     for j in 1:chunk
         fill!(cur_pos, 1)
-        InMemoryDatasets.row_join!(buff, cur_pos, view(ds, (j-1)*rchunk+1:j*rchunk, :), ff, :, delim = delim, quotechar = quotechar)
+        InMemoryDatasets.row_join!(buff, cur_pos, view(ds, (j-1)*rchunk+1:j*rchunk, :), ff, :, delim = delim, quotechar = quotechar, threads = threads)
         WRITE(f, buff, cur_pos, lbuff)
     end
     fill!(cur_pos, 1)
-    InMemoryDatasets.row_join!(buff, cur_pos, view(ds, chunk*rchunk+1:n, :), ff, :, delim = delim, quotechar = quotechar)
+    InMemoryDatasets.row_join!(buff, cur_pos, view(ds, chunk*rchunk+1:n, :), ff, :, delim = delim, quotechar = quotechar, threads = threads)
     WRITE(f, buff, cur_pos, lbuff, length(chunk*rchunk+1:n))
 end
 
 # basic function for writing csv files
-function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24)
+function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24, threads::Bool = true)
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -77,7 +89,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
     end
     n, p = size(ds)
     if lsize == :auto
-        lsize = _find_max_string_length(ds, UInt8.(delim), quotechar, mapformats)
+        lsize = _find_max_string_length(ds, UInt8.(delim), quotechar, mapformats, threads)
     else
         lsize = lsize
     end
@@ -107,7 +119,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         cur_pos = Vector{Int}(undef, cs)
         lbuff = Vector{UInt8}(undef, lsize*cs)
         nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar)
+        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar, threads)
     catch e
         close(f)
         rethrow(e)
