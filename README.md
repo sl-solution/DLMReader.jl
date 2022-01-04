@@ -6,7 +6,9 @@ An efficient multi-threaded package for reading(writing) delimited files. It is 
 
 It works very well for huge files (long or/and wide).
 
-The package supports:
+**The package supports:**
+
+> `DLMReader` doesn't guess `delimiter` and if it is different from `,`, it must be passed via the `delimiter` keyword argument. It also doesn't check if the text is quoted, user must pass `quotechar` option if it is desired.
 
 * reading multiple observations per line: e.g. reading `1,2,3,4,5\n6,7,8\n10`
 * allow controlling the line size and buffer size for giving extra flexibility to read/write very wide data
@@ -100,8 +102,7 @@ julia> filereader("ex6.csv", delimiter = ' ', informat = Dict(2=>COMMA!), header
 julia> filereader(IOBuffer("1,2,3,4,5\n6,7,8\n10\n"),
                   header = [:x1, :x2],
                   types = [Int, Int],
-                  multiple_obs = true,
-                  threads = false)
+                  multiple_obs = true)
 5×2 Dataset
  Row │ x1        x2       
      │ identity  identity
