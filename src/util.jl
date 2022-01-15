@@ -1,5 +1,5 @@
 function allocatecol_for_res(T, s)
-    InMemoryDatasets.Missings.missings(T, s)
+    InMemoryDatasets._missings(T, s)
 end
 
 function find_end_of_line(buff, lo, hi, eol)
@@ -425,7 +425,7 @@ function read_multiple_lines(path, lo, hi, eol, howmany)
                 if _tmp_line[i] == eol_last
                     _cond2_ = true
                 end
-                if _cond1_ && _cond2_ 
+                if _cond1_ && _cond2_
                     cnt += 1
                     if cnt >= howmany
                         CLOSE(f)
