@@ -298,6 +298,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                         last_valid_buff = i
                         buffer.data[i] == eol_last && buffer.data[i - eol_len + 1] == eol_first && break
                         back_cnt += 1
+                        i < buffsize/4 && throw(ArgumentError("It is difficult to reach end of lines, either linebreak (current value : $(length(eol) == 1 ? Char.([linebreak]) : Char.(eol))) is not detected properly or `lsize` and/or `buffsize` are too small."))
                     end
                     cur_position = position(f)
                     seek(f, cur_position - back_cnt)
@@ -376,7 +377,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
             colwidth = 0:0
         end
     end
-    
+
     if (header isa AbstractVector) && (eltype(header) <: Union{AbstractString, Symbol})
         # colnames = header
         colnames = InMemoryDatasets.make_unique(header; makeunique = makeunique)
@@ -480,7 +481,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
             throw(ArgumentError("The current buffer size and line size are too small increase them by setting `lsize` and `buffsize`"))
         end
         res = Any[allocatecol_for_res(types[i], min(sum(ns), limit)) for i in 1:length(types)]
-                
+
         line_lo = [1; line_hi[1:end] .+ 1]
         CLOSE(f)
         if nt > 1
@@ -530,7 +531,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     else
         f_pos = 0
     end
-    
+
     cnt = 1
     n_cols = 0
     col_width = 0:0
