@@ -13,7 +13,7 @@ end
 _string_size(x, f, threads, ::Type{T}) where T <: Bool = 1
 _string_size(x, f, threads, ::Type{T}) where T <: Characters{M, UInt8} where M= M
 
-_STRING_L(x) = length(string(x))
+_STRING_L(x) = ncodeunits(string(x))
 _STRING_L(::Missing) = 0
 function _string_size(x, f, threads, ::Type{T}) where T <: Any
     if threads
