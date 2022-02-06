@@ -10,7 +10,8 @@ export filereader,
     COMMAX!,
     NUM_NA!,
     CHAR_NA!,
-    BOOL!
+    BOOL!,
+    STRIP!
 
 include("linebuffer.jl")
 include("util.jl")

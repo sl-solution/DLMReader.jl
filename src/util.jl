@@ -14,7 +14,7 @@ function find_end_of_line(buff, lo, hi, eol)
     return hi
 end
 
-@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, ignorerepeated)
+function find_next_delim(buffer, lo, hi, dlm, dlmstr, ignorerepeated)
     if dlmstr === nothing
         i = lo
         new_hi = hi
@@ -52,7 +52,7 @@ end
 end
 
 # this needs refactoring
-@inline function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc, ignorerepeated)
+function find_next_delim(buffer, lo, hi, dlm, dlmstr, qut, qutesc, ignorerepeated)
     new_lo = 0
     new_hi = 0
     if dlmstr === nothing || length(dlm) == 1
@@ -139,7 +139,7 @@ end
     return 0,0,0
 end
 
-@inline function find_next_quote(buffer, lo, hi, qut, qutesc)
+function find_next_quote(buffer, lo, hi, qut, qutesc)
     @inbounds if qut !== qutesc
         for i in lo:hi
             buffer[i] == qut && buffer[i-1] != qutesc && return i
@@ -179,7 +179,7 @@ end
 # end
 
 
-@inline function clean_escapechar!(buffer, lo, hi, qut, qutesc)
+function clean_escapechar!(buffer, lo, hi, qut, qutesc)
     cnt = hi
     i = hi
     flag = false
@@ -198,7 +198,7 @@ end
 end
 
 # when eol is \r\n
-@inline function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
+function find_next_delim_or_end_of_line(buffer, field_start, dlm, eol::Vector{UInt8})
     @inbounds for i in field_start:length(buffer)
         if buffer[i] in dlm
             return false, i
@@ -209,13 +209,13 @@ end
     return true, length(buffer)
 end
 
-@inline function check_if_a_buffer_has_end_of_line(buff, lo, hi, eol::UInt8)
+function check_if_a_buffer_has_end_of_line(buff, lo, hi, eol::UInt8)
     for i in lo:hi
         buff[i] == eol && return true,i
     end
     return false,0
 end
-@inline function check_if_a_buffer_has_end_of_line(buff, lo, hi, eol::Vector{UInt8})
+function check_if_a_buffer_has_end_of_line(buff, lo, hi, eol::Vector{UInt8})
     for i in lo:hi-1
         buff[i] == eol[1] && buff[i+1] == eol[2]  && return true,i
     end
@@ -229,7 +229,7 @@ end
 # end
 
 
-@inline function _find_how_many_dlm(headerl, dlm)
+function _find_how_many_dlm(headerl, dlm)
     cnt = 1
     for c in headerl
         c in dlm ? cnt += 1 : nothing
@@ -503,7 +503,7 @@ _todate(s::DateFormat) = s
 _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateFormat"))
 
 
-@inline function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
+function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
     txt = "\n"
     last_col = min(length(col), 20)
     for j in 1:last_col

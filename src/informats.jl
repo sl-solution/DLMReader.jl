@@ -1,7 +1,7 @@
 # This file contains some popular informats
 # This is experimental currently
 
-Base.@propagate_inbounds function strip_location(x, lo, hi)
+Base.@propagate_inbounds function STRIP!(x, lo, hi)
     for i in lo:hi
         if x.data[i] != 0x20
             lo = i
@@ -20,7 +20,7 @@ end
 # In general any function defined as informat must have these specifications:
 # * it must take three positional arguments, x, lo, hi, where x is a custom structure and x.data is a vector of UInt8
 # * function can change the values of x.data but only within lo:hi
-# * function must do the operations in place and return nothing
+# * function must do the operations in place and return lo,hi or revised lo,hi
 
 
 function COMMA!(x, lo, hi)
@@ -35,8 +35,8 @@ function COMMA!(x, lo, hi)
     # for i in lo:cnt
     #     x.data[i] = 0x20
     # end
-    fill!(view(x.data, lo:cnt), 0x20)
-    nothing
+    # fill!(view(x.data, lo:cnt), 0x20)
+    cnt+1,hi
 end
 function COMMAX!(x, lo, hi)
     cnt = hi
@@ -54,13 +54,13 @@ function COMMAX!(x, lo, hi)
     # for i in lo:cnt
     #     x.data[i] = 0x20
     # end
-    fill!(view(x.data, lo:cnt), 0x20)
-    nothing
+    # fill!(view(x.data, lo:cnt), 0x20)
+    cnt+1,hi
 end
 
 # treats NA,na,Na,nA,... as missing value for numeric columns
 function NUM_NA!(x, lo, hi)
-    lo, hi = strip_location(x, lo, hi)
+    lo, hi = STRIP!(x, lo, hi)
     flag = false
     if hi-lo+1 == 2
         if x.data[lo] in (UInt8('N'), UInt8('n')) && x.data[hi] in (UInt8('A'), UInt8('a'))
@@ -69,13 +69,15 @@ function NUM_NA!(x, lo, hi)
     end
 
     if flag
-        fill!(view(x.data, lo:hi), 0x20)
+        x.data[lo] = 0x20
+        return lo,lo
+        # fill!(view(x.data, lo:hi), 0x20)
     end
-    nothing
+    lo,hi
 end
 
 function CHAR_NA!(x, lo, hi)
-    lo, hi = strip_location(x, lo, hi)
+    lo, hi = STRIP!(x, lo, hi)
     flag = false
     if hi-lo+1 == 2
         if x.data[lo] in (UInt8('N'), UInt8('n')) && x.data[hi] in (UInt8('A'), UInt8('a'))
@@ -90,13 +92,15 @@ function CHAR_NA!(x, lo, hi)
         #     x.data[i] = 0x20
         # end
         # x.data[lo] = UInt8('.')
-        fill!(view(x.data, lo:hi), 0x20)
+        x.data[lo] = 0x20
+        return lo,lo
+        # fill!(view(x.data, lo:hi), 0x20)
     end
-    nothing
+    lo,hi
 end
 
 Base.@propagate_inbounds function BOOL!(x, lo, hi)
-    lo, hi = strip_location(x, lo, hi)
+    lo, hi = STRIP!(x, lo, hi)
     if length(lo:hi) == 1
         if x.data[lo] in (0x54, 0x74, 0x31)
             x.data[lo] = 0x31
@@ -121,5 +125,5 @@ Base.@propagate_inbounds function BOOL!(x, lo, hi)
             fill!(view(x.data, lo+1:lo+4), 0x20)
         end
     end
-    nothing
+    lo,hi
 end

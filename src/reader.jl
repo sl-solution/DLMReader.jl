@@ -1,10 +1,12 @@
 const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
-@inline function parse_data!(res, buffer, types, cc, en, current_line, char_buff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
+function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_buff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
         flag = 0
+        cc = lo
+        en = hi
         if !isempty(informat)
             _infmt! = get(informat, j, identity)
             if _infmt! !== identity
-                _infmt!(buffer, cc, en)
+                cc, en = _infmt!(buffer, cc, en)::Tuple{Int, Int}
             end
         end
 
@@ -104,7 +106,7 @@ end
 
 
 
-@inline function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
+function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -183,7 +185,7 @@ end
 end
 
 # different function for reading multiple observations per line - the main different is here we push one observation at a time
-@inline function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
+function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -348,7 +350,7 @@ end
 
 # main distributer
 function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int))::Dataset
-    
+
     eol = UInt8.(linebreak)
     eol_first = first(eol)
     eol_last = last(eol)
