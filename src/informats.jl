@@ -1,3 +1,5 @@
+### line informat - informat that is applied to whole line before passing it for parsing
+LINEINFORMAT_DEFAULT(x, lo, hi) = nothing
 # This file contains some popular informats
 # This is experimental currently
 
