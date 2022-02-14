@@ -210,6 +210,28 @@ function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) whe
     return 0
 end
 
+
+function buff_parser(res, buffer, cc, nd, current_line, ::Type{T}) where T <: UUID
+    flag = 0
+    if cc>nd
+        res[current_line[]] = missing
+    else
+        val = Base.tryparse(UUID, view(buffer, cc:nd))
+        if val === nothing
+            @simd for i in cc:nd
+                @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
+                    flag = 1
+                end
+            end
+            res[current_line[]] = missing
+        else
+            res[current_line[]] = val
+        end
+        flag
+    end
+end
+
+
 function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) where T <: DT
     if cc>nd
         nothing

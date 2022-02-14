@@ -3,6 +3,7 @@ module DLMReader
 using InMemoryDatasets
 using Reexport
 @reexport using Dates, InlineStrings
+using UUIDs
 export filereader,
     filewriter,
     # informats
