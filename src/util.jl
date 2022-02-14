@@ -484,7 +484,7 @@ function guess_eol_char(path)
     while !eof(f)
         nb = readbytes!(f, a)
         for i in 1:nb
-            if a[i] == LF && a[i-1] == CR
+            if a[i] == LF && i>1 && a[i-1] == CR
                 CLOSE(f)
                 return ['\r', '\n']
             elseif a[i] == LF
