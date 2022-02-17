@@ -551,7 +551,6 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     if l_length > lsize
         throw(ArgumentError("very wide delimited file! you need to set `lsize` and `buffsize` argument with larger values,  they are currently set as $lsize and $buffsize respectively. It is also recommended to use lower number of `guessingrows`"))
     end
-
     seek(f, f_pos)
 
     a_line_buff = Vector{UInt8}(undef, l_length)
@@ -591,7 +590,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     if header === true
         lo = _tmp_f_pos+1
     else
-        lo = 0
+        lo = f_pos+1
     end
     seek(f, lo)
     rows_in = 0
