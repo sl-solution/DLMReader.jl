@@ -219,7 +219,7 @@ function buff_parser(res, buffer, cc, nd, current_line, ::Type{T}) where T <: UU
         val = Base.tryparse(UUID, view(buffer, cc:nd))
         if val === nothing
             @simd for i in cc:nd
-                @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
+                @inbounds if (buffer.data[i] != 0x20 && buffer.data[i] != 0x2e)
                     flag = 1
                 end
             end
