@@ -77,7 +77,7 @@ function WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar, threa
 end
 
 # basic function for writing csv files
-function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24, threads::Bool = true)
+function filewriter(path::AbstractString, ds::AbstractDataset; delimiter = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24, threads::Bool = true)
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -89,7 +89,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
     end
     n, p = size(ds)
     if lsize == :auto
-        lsize = _find_max_string_length(ds, UInt8.(delim), quotechar, mapformats, threads)
+        lsize = _find_max_string_length(ds, UInt8.(delimiter), quotechar, mapformats, threads)
     else
         lsize = lsize
     end
@@ -108,7 +108,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
                 if j == ncols
                     write(f, '\n')
                 else
-                    write(f, delim)
+                    write(f, delimiter)
                 end
             end
         end
@@ -119,7 +119,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delim = ',', quot
         cur_pos = Vector{Int}(undef, cs)
         lbuff = Vector{UInt8}(undef, lsize*cs)
         nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar, threads)
+        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delimiter, quotechar, threads)
     catch e
         close(f)
         rethrow(e)
