@@ -1,4 +1,3 @@
-# too many allocations for time type, probably we need another strategy for this
 function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <: TimeType
     flag = 0
     if cc > nd

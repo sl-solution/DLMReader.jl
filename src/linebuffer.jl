@@ -1,5 +1,4 @@
-# Initial Idea, far from usability
-# DO NOT use it
+
 struct LineBuffer <: AbstractString
     data::Vector{UInt8}
 end

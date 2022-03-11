@@ -1,4 +1,3 @@
-# some idea to reduce allocation - Not ok yet
 _string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.FLOATS = Base.Ryu.neededdigits(T)
 
 _ndigits(x) = ndigits(x)
