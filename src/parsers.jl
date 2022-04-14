@@ -15,7 +15,12 @@ function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <
         end
         res[current_line[]] = missing
     else
-        res[current_line[]] = T(val[1]...)
+        if Dates.validargs(T, val[1]...) === nothing
+            res[current_line[]] = T(val[1]...)
+        else
+            res[current_line[]] = missing
+            flag = 1
+        end
     end
     flag
 end
