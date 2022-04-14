@@ -4,7 +4,7 @@
 ## Package manual
 
 ```@contents
-Pages = ["man/performance.md"]
+Pages = []
 Depth = 2
 ```
 

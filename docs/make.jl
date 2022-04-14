@@ -17,8 +17,7 @@ makedocs(
     #     edit_link = "main"
     # ),
     pages = Any[
-        "Introduction" => "index.md",
-        "Performance tips" => "man/performance.md"
+        "Introduction" => "index.md"
         # "API" => Any[
         #     "Functions" => "lib/functions.md"
         # ]
