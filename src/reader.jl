@@ -152,8 +152,10 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                 anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
                     track_problems[1][j] = true
-                    track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
-                    current_loc_track_problems += 1
+                    if current_loc_track_problems < 21
+                        track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+                        current_loc_track_problems += 1
+                    end
                 end
 
                 field_start = dlm_pos + 1
@@ -173,8 +175,10 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                 anything_is_wrong = parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
                     track_problems[1][j] = true
-                    track_problems[2][current_loc_track_problems] = (fixed[j].start + offset):(dlm_pos)
-                    current_loc_track_problems += 1
+                    if current_loc_track_problems < 21
+                        track_problems[2][current_loc_track_problems] = (fixed[j].start + offset):(dlm_pos)
+                        current_loc_track_problems += 1
+                    end
                 end
 
                 field_start = dlm_pos + 1
@@ -227,7 +231,6 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         int_cnt = 0
 
         line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
-        any_problem_with_parsing = 0
         if types[j] <: Characters
             char_cnt += 1
         elseif types[j] <: TimeType
@@ -249,8 +252,10 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
         if anything_is_wrong == 1
             track_problems[1][j] = true
-            track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
-            current_loc_track_problems += 1
+            if current_loc_track_problems < 21
+                track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+                current_loc_track_problems += 1
+            end
         end
         field_start = dlm_pos + 1
         read_one_obs = true
@@ -259,7 +264,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         if j == n_cols && any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @warn "There are problems with parsing file at line $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
+                    @warn "There are problems with parsing file for observation $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
                 end
             end
             # reset track_problems
@@ -275,6 +280,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
             current_line[] += 1
             current_line[]> limit && return read_one_obs
             j = 1
+            any_problem_with_parsing = 0
         end
 
 
