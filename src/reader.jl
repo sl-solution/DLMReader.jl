@@ -106,7 +106,7 @@ end
 
 
 
-function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!)
+function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -117,6 +117,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
     dlmstr === nothing ? dlm_length = 1  : dlm_length = length(dlm)
     anything_is_wrong = 0
     any_problem_with_parsing = 0
+    current_loc_track_problems = 1
     while true
 
         # keep track of Characters and DateTime columns
@@ -149,7 +150,14 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                 # we should have a strategy for this kind of problem, for now just let the end of line as endpoint
                 dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
                 anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
+                if anything_is_wrong == 1
+                    track_problems[1][j] = true
+                    track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+                    current_loc_track_problems += 1
+                end
+
                 field_start = dlm_pos + 1
+
             else # we have a fixed width information for the current column
                 offset = line_start - 1
                 dlm_pos = fixed[j].stop + offset
@@ -158,23 +166,33 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                     warn_pass_end_of_line += 1
                     # TODO use better wording
                     if warn_pass_end_of_line < 5
-                        @warn "for column $(j) in line $(current_line[]) the cursor goes beyond the line, and the value is truncated"
+                        @warn "for column $(j) in line $(current_line[]+total_line_skipped) the cursor goes beyond the line, and the value is truncated"
                     end
                 end
                 # dlm_pos doesn't contain dlm so it shouldn't be dlm_pos-1 like the non-fixed case
                 anything_is_wrong = parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
+                if anything_is_wrong == 1
+                    track_problems[1][j] = true
+                    track_problems[2][current_loc_track_problems] = (fixed[j].start + offset):(dlm_pos)
+                    current_loc_track_problems += 1
+                end
+
                 field_start = dlm_pos + 1
             end
             any_problem_with_parsing += anything_is_wrong
+
             dlm_pos > line_end && break
         end
         if any_problem_with_parsing>0
-            Threads.atomic_add!(number_of_errors_happen_so_far, 1)
-            if number_of_errors_happen_so_far[] <= warn
+            if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @warn "There are problems with parsing data in line $(current_line[]), the values are set as missing:$(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
+                    @warn "There are problems with parsing file at line $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
                 end
             end
+            # reset track_problems
+            fill!(track_problems[1], false)
+            fill!(track_problems[2], 0:0)
+            current_loc_track_problems = 1
         end
 
         line_start = line_end + length(eol) + 1
@@ -186,7 +204,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
 end
 
 # different function for reading multiple observations per line - the main different is here we push one observation at a time
-function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
+function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -197,6 +215,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
     dlmstr === nothing ? dlm_length = 1  : dlm_length = length(dlm)
     anything_is_wrong = 0
     any_problem_with_parsing = 0
+    current_loc_track_problems = 1
     j = 1
     field_start = 1
     read_one_obs = false
@@ -228,9 +247,27 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         # we should have a strategy for this kind of problem, for now just let the end of line as endpoint
         dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
         anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
+        if anything_is_wrong == 1
+            track_problems[1][j] = true
+            track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+            current_loc_track_problems += 1
+        end
         field_start = dlm_pos + 1
         read_one_obs = true
         any_problem_with_parsing += anything_is_wrong
+
+        if j == n_cols && any_problem_with_parsing>0
+            if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
+                if colnames !== nothing
+                    @warn "There are problems with parsing file at line $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
+                end
+            end
+            # reset track_problems
+            fill!(track_problems[1], false)
+            fill!(track_problems[2], 0:0)
+            current_loc_track_problems = 1
+        end
+
         j = j + 1
         if j > n_cols
             map(x->push!(x, missing), res)
@@ -240,14 +277,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
             j = 1
         end
 
-        if j == n_cols && any_problem_with_parsing>0
-            Threads.atomic_add!(number_of_errors_happen_so_far, 1)
-            if number_of_errors_happen_so_far[] <= warn
-                if colnames !== nothing
-                    @warn "There are problems with parsing data in line $(current_line[]), the values are set as missing:$(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
-                end
-            end
-        end
+
         if dlm_pos > line_end
             line_start = line_end + length(eol) + 1
             field_start = line_start
@@ -259,7 +289,7 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
     try
@@ -284,6 +314,10 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
         last_valid_buff = buffsize
         # position which reading should be started
         seek(f, max(0, lo - 1))
+
+        # to track parsing problem for better warnings
+        # second part of track_problems keep the location of the probem in the current line
+        track_problems = [falses(length(types)), [0:0 for _ in 1:20]]
 
         # TODO we should have a strategy when line is to long
         while true
@@ -330,9 +364,9 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                 last_valid_buff = buffsize - (cur_position - hi + 1)
             end
             if multiple_obs
-                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit)
+                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
             else
-                _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat)
+                _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems, total_line_skipped)
             end
                 # we need to break at some point
             current_line[] > limit && break
@@ -357,6 +391,8 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     eol_last = last(eol)
     eol_len = length(eol)
     colwidth = 0:0
+
+    total_line_skipped = skipto - 1 + (header == true)
 
     f = OUR_OPEN(path, read = true)
     # generating varnames
@@ -384,13 +420,14 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
 
     if (header isa AbstractVector) && (eltype(header) <: Union{AbstractString, Symbol})
         # colnames = header
-        colnames = InMemoryDatasets.make_unique(header; makeunique = makeunique)
+        colnames = Symbol.(header)
+        InMemoryDatasets.make_unique!(colnames, colnames; makeunique = makeunique)
     elseif header === true
-        f_pos, colnames = _generate_colname_based(path, eol, f_pos+1, lsize, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, emptycolname, ignorerepeated, multiple_obs, line_informat)
+        f_pos, colnames = _generate_colname_based(path, eol, f_pos+1, lsize, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, emptycolname, ignorerepeated, multiple_obs, line_informat, total_line_skipped)
         isempty(colnames) && throw(ArgumentError("Detecting column names return empty array, this can happen if your file is empty or the column names are not detectable."))
         colnames = InMemoryDatasets.make_unique(colnames; makeunique = makeunique)
     elseif header === false
-        colnames = ["x"*string(k) for k in 1:length(types)]
+        colnames = [Symbol("x"*string(k)) for k in 1:length(types)]
     else
         throw(ArgumentError("`header` can be true or false, or a list of variable names"))
     end
@@ -491,17 +528,17 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         if nt > 1
             Threads.@threads for i in 1:min(nt, last_chunk_to_read)
                 line_lo[i]>line_hi[i] && continue
-                readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, limit = limit, line_informat = line_informat)
+                readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, limit = limit, line_informat = line_informat, total_line_skipped = total_line_skipped)
             end
         else
             for i in 1:1
-                readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, limit = limit, line_informat = line_informat)
+                readfile_chunk!(res, line_lo[i], line_hi[i], charbuff[i], path, types, ns[i], lo[i], hi[i], colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, limit = limit, line_informat = line_informat, total_line_skipped = total_line_skipped)
             end
         end
     else
         res = Any[allocatecol_for_res(types[i], 1) for i in 1:length(types)]
         lo = 0
-        readfile_chunk!(res, 1, 1, charbuff[1], path, types, 1, 1, FILESIZE(path), colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, multiple_obs = true, limit = limit)
+        readfile_chunk!(res, 1, 1, charbuff[1], path, types, 1, 1, FILESIZE(path), colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, multiple_obs = true, limit = limit, total_line_skipped = total_line_skipped)
     end
 
     Dataset(res, colnames, copycols = false, makeunique = makeunique)
@@ -513,6 +550,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
     end
+    total_line_skipped = skipto - 1 + (header == true)
     eol = UInt8.(linebreak)
     eol_last = last(eol)
     eol_first = first(eol)
@@ -604,7 +642,7 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     hi = file_pos
     types = repeat([String], n_cols)
     res = [allocatecol_for_res(String, rows_in) for _ in 1:n_cols]
-    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar, eolwarn = eolwarn, ignorerepeated = ignorerepeated, line_informat = line_informat)
+    readfile_chunk!(res, 1, rows_in, [], path, types, rows_in, lo, hi, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, lsize = lsize, informat = informat, quotechar = quotechar, escapechar = escapechar, eolwarn = eolwarn, ignorerepeated = ignorerepeated, line_informat = line_informat, total_line_skipped = total_line_skipped)
     outtypes = Vector{DataType}(undef, n_cols)
     if !(dtformat isa Dict)
         for j in 1:n_cols
@@ -646,7 +684,7 @@ end
 
 function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat::Dict{Int, <:Function} = Dict{Int, Function}(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
 
-    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float16, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255,  Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
+    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float16, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
     ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
 

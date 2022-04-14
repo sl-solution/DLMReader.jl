@@ -452,10 +452,10 @@ function read_multiple_lines(path, lo, hi, eol, howmany)
 end
 
 
-function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, autogen, ignorerepeated, multiple_obs, line_informat)
+function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, autogen, ignorerepeated, multiple_obs, line_informat, total_line_skipped)
     _lvarnames, f_pos = read_one_line(path, lo, hi, eol)
     _varnames = [Vector{Union{String, Missing}}(undef, 1) for _ in 1:length(types)]
-    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, line_informat = line_informat)
+    readfile_chunk!(_varnames, 1,1, [], path, repeat([String], length(types)), 1, lo, f_pos, nothing; delimiter = delimiter, linebreak = linebreak, buffsize = buffsize, fixed = colwidth, dlmstr = dlmstr, quotechar = quotechar, escapechar = escapechar, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, line_informat = line_informat, total_line_skipped = total_line_skipped)
     varnames = Vector{String}(undef, length(types))
     cnter = 1
     for i in 1:length(_varnames)
@@ -522,6 +522,17 @@ function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
         end
     end
     txt *= unsafe_string(pointer(buff, l_st), l_en - l_st + 1)
+end
+
+function _write_warn_detail_columns(buff, res, l_st, l_en, cols, track_problems)
+    loc = findall(track_problems[1])
+    txt = "\n"
+    for i in 1:min(length(loc), 20)
+        txt *= "Column " * string(loc[i]) * " : " * string(cols[loc[i]])
+        txt *= " : Read from buffer (\"" * unsafe_string(pointer(buff, track_problems[2][i].start), length(track_problems[2][i])) * "\")"
+        txt *= "\n"
+    end
+    txt
 end
 
 function OUR_OPEN(path; kwargs...)
