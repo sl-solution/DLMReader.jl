@@ -39,7 +39,8 @@ function _find_max_string_length(ds, delim, quotechar, mapformats, threads)
     cnt_str = 0
     for j in 1:ncols
         T = Core.Compiler.return_type(ff[j], Tuple{eltype(InMemoryDatasets._columns(ds)[j])})
-        s += _string_size(InMemoryDatasets._columns(ds)[j], ff[j], threads, nonmissingtype(T))
+        slen = _string_size(InMemoryDatasets._columns(ds)[j], ff[j], threads, nonmissingtype(T))
+        ismissing(slen) ? s+=0 : s+=slen
         if nonmissingtype(T) <: AbstractString
             cnt_str += 1
         end
