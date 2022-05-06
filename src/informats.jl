@@ -43,7 +43,7 @@ end
 function COMMAX!(x, lo, hi)
     cnt = hi
     for i in hi:-1:lo
-        if !(x.data[i] in (UInt8('.'))) #  TODO we should take care of('€') it is not UInt8
+        if !(x.data[i] == (UInt8('.'))) #  TODO we should take care of('€') it is not UInt8
             if x.data[i] == UInt8(',')
                 x.data[cnt] = UInt8('.')
             else
@@ -53,10 +53,11 @@ function COMMAX!(x, lo, hi)
             cnt < lo && break
         end
     end
-    # for i in lo:cnt
-    #     x.data[i] = 0x20
-    # end
-    # fill!(view(x.data, lo:cnt), 0x20)
+    for i in cnt+3:hi
+        if x.data[i] == 0xac && x.data[i-1] == 0x82 && x.data[i-2] == 0xe2
+            fill!(view(x.data, i-2:i), 0x20)
+        end
+    end
     cnt+1,hi
 end
 

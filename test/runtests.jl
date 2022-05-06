@@ -42,6 +42,8 @@ dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
         @test ds3[1, 3] == r_loc
         @test ds3[end, 3] == min(r_loc+5000-1, nrow(ds))
     end
+    ds = filereader(joinpath(dir, "euro.csv"), header = false, delimiter=';', informat = Dict(2 => COMMAX!))
+    @test ds == Dataset([Union{Missing, String}["a", "b", "c", "f", "l", "g"], Union{Missing, Float64}[100.0, 34343.0, 343.34, missing, 123343.0, 3434.0], Union{Missing, Int64}[1, 2, missing, 12, 2, 1]], :auto)
 end
 
 @testset "multiple observations per line" begin
