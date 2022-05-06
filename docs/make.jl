@@ -17,7 +17,17 @@ makedocs(
     #     edit_link = "main"
     # ),
     pages = Any[
-        "Introduction" => "index.md"
+        "Introduction" => "index.md",
+        "Tutorial" => Any[
+            "Basic" => "man/tutorial_basic.md",
+            "Advanced" => "man/tutorial_adv.md"
+        ],
+        "User Guide" => Any[
+            "Reading" => "man/read.md",
+            "Writing" => "man/write.md",
+            "Informats" => "man/informat.md"
+        ],
+        "Gallery" => "man/gallery.md"
         # "API" => Any[
         #     "Functions" => "lib/functions.md"
         # ]
