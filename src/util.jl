@@ -1,3 +1,66 @@
+abstract type DLMERRORS end
+
+# showing the first 20 columns with problems
+struct DLMERRORS_PARSE <: DLMERRORS
+    message::String
+    function DLMERRORS_PARSE(buff, cols, res, track_problems)
+        loc = findall(track_problems[1])
+        txt = "\n"
+        for i in 1:min(length(loc), 20)
+            txt *= "Column " * string(loc[i]) * " : " * string(cols[loc[i]]) * "::$(string(nonmissingtype(eltype(res[loc[i]]))))" 
+            txt *= " : Read from buffer (\"" * unsafe_string(pointer(buff, track_problems[2][i].start), length(track_problems[2][i])) * "\")"
+            txt *= "\n"
+        end
+        new(txt)
+    end
+end
+struct DLMERRORS_LINE <: DLMERRORS
+    message::String
+    function DLMERRORS_LINE(buff, l_st, l_en, line_number, row_number)
+        new("There might be more observations in the input file at line $line_number (observation $row_number) than the number of columns in the output dataset.\n $(unsafe_string(pointer(buff, l_st), l_en - l_st + 1)).")
+    end
+end
+
+struct DLMERRORS_BUFFER <: DLMERRORS
+    message::String
+    function DLMERRORS_BUFFER(buff, l_st, l_en, res, cur_l, col)
+        txt = "\n"
+        last_col = min(length(col), 100)
+        for j in 1:last_col
+            txt *= string(col[j])
+            txt *= "::" * string(nonmissingtype(eltype(res[j])))
+            txt *= " = "
+            txt *= string(res[j][cur_l])
+            if j < last_col
+                txt *= ", "
+            else
+                if last_col < length(col)
+                    txt *= " ...(some warning messages are omitted) \n"
+                else
+                    txt *= "\n"
+                end
+            end
+        end
+        no_bytes = l_en - l_st + 1
+
+        txt *= unsafe_string(pointer(buff, l_st), min(1000, no_bytes))
+        if no_bytes > 1000
+            txt *= " ...[the line buffer is truncated]"
+        end
+        new(txt)
+    end
+end
+
+struct DLMERRORS_PARSE_ERROR <: DLMERRORS
+    message::String
+    function DLMERRORS_PARSE_ERROR(buff, l_st, l_en, res, cur_l, col, track_problems, line_number)
+        new("There are problems with parsing the input file at line $line_number (observation $cur_l) : $(DLMERRORS_PARSE(buff, col, res, track_problems).message) the values are set as missing.\nMORE DETAILS: $(DLMERRORS_BUFFER(buff, l_st, l_en, res, cur_l, col).message)\n")
+    end
+end
+
+Base.show(io::IO, ::MIME"text/plain", err::DLMERRORS_PARSE_ERROR) = show(IOContext(io, :limit => true, :compact => true), "text/plain", err.message)
+Base.show(io::IO, ::MIME"text/plain", err::DLMERRORS_LINE) = show(IOContext(io, :limit => true), "text/plain", err.message)
+
 function allocatecol_for_res(T, s)
     InMemoryDatasets._missings(T, s)
 end
@@ -501,39 +564,6 @@ end
 _todate(s::AbstractString) = DateFormat(s)
 _todate(s::DateFormat) = s
 _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateFormat"))
-
-
-function _write_warn_detail(buff, l_st, l_en, res, cur_l, col)::String
-    txt = "\n"
-    last_col = min(length(col), 20)
-    for j in 1:last_col
-        txt *= string(col[j])
-        txt *= "::" * string(nonmissingtype(eltype(res[j])))
-        txt *= " = "
-        txt *= string(res[j][cur_l])
-        if j < last_col
-            txt *= ", "
-        else
-            if last_col < length(col)
-                txt *= " ...(some warning messages are omitted) \n"
-            else
-                txt *= "\n"
-            end
-        end
-    end
-    txt *= unsafe_string(pointer(buff, l_st), l_en - l_st + 1)
-end
-
-function _write_warn_detail_columns(buff, res, l_st, l_en, cols, track_problems)
-    loc = findall(track_problems[1])
-    txt = "\n"
-    for i in 1:min(length(loc), 20)
-        txt *= "Column " * string(loc[i]) * " : " * string(cols[loc[i]])
-        txt *= " : Read from buffer (\"" * unsafe_string(pointer(buff, track_problems[2][i].start), length(track_problems[2][i])) * "\")"
-        txt *= "\n"
-    end
-    txt
-end
 
 function OUR_OPEN(path; kwargs...)
     if path isa AbstractString

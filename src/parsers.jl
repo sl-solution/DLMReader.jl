@@ -169,23 +169,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})
     return flag
 
 end
-# function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
-#     (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd, Parsers.Options())
-#     code == 33 ? res[current_line[]] = x : x = missing
-# end
-#
-# function (::Type{T})(buf::Vector{UInt8}, pos, len) where {T <: InlineString}
-#    if T === InlineString1
-#        len == 1 || InlineStrings.stringtoolong(T, sizeof(x))
-#        return Base.bitcast(InlineString1, buf[pos])
-#    else
-#        length(buf) < len && InlineStrings.buftoosmall()
-#        len < sizeof(T) || InlineStrings.stringtoolong(T, len)
-#        y = GC.@preserve buf unsafe_load(convert(Ptr{T}, pointer(buf, pos)))
-#        sz = 8 * (sizeof(T) - len)
-#        return Base.or_int(Base.shl_int(Base.lshr_int(InlineStrings._bswap(y), sz), sz), Base.zext_int(T, UInt8(len)))
-#    end
-# end
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
     if cc>nd
@@ -200,6 +183,8 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Inl
     end
     return 0
 end
+
+
 function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) where T <: Characters
     if cc>nd
         res[current_line[]] = missing

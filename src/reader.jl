@@ -9,7 +9,6 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
                 cc, en = _infmt!(buffer, cc, en)::Tuple{Int, Int}
             end
         end
-
         @inbounds if types[j] <: Int64
             flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
         elseif types[j] <: Float64
@@ -98,7 +97,7 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
             flag = buff_parser(res[j]::Vector{Union{Missing, BigFloat}}, buffer, cc, en, current_line, BigFloat)
         elseif types[j] <: UUID
             flag = buff_parser(res[j]::Vector{Union{Missing, UUID}}, buffer, cc, en, current_line, UUID)
-        else # anything else
+        else # others are string
             flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, String)
         end
         flag
@@ -106,11 +105,11 @@ end
 
 
 
-function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
+function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
-
+    dlm_pos = 0
     #keeping track of number of warnings
     warn_pass_end_of_line = 0
 
@@ -126,7 +125,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
         int_cnt = 0
 
         line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
-        line_informat!(buffer, line_start, line_end)
+        line_start, line_end = line_informat!(buffer, line_start, line_end)
         field_start = line_start
         any_problem_with_parsing = 0
         for j in 1:n_cols
@@ -147,7 +146,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                 else
                     dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
                 end
-                # we should have a strategy for this kind of problem, for now just let the end of line as endpoint
+                # we should have a strategy for this kind of problems, for now just let the end of line as endpoint                
                 dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
                 anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
@@ -168,7 +167,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                     warn_pass_end_of_line += 1
                     # TODO use better wording
                     if warn_pass_end_of_line < 5
-                        @warn "for column $(j) in line $(current_line[]+total_line_skipped) the cursor goes beyond the line, and the value is truncated"
+                        @warn "for column $(j) in line $(current_line[]+total_line_skipped) the cursor goes beyond the line, and the value is truncated\n"
                     end
                 end
                 # dlm_pos doesn't contain dlm so it shouldn't be dlm_pos-1 like the non-fixed case
@@ -184,13 +183,19 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
                 field_start = dlm_pos + 1
             end
             any_problem_with_parsing += anything_is_wrong
-
             dlm_pos > line_end && break
+        end
+        if dlm_pos < line_end
+            if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
+                if colnames !== nothing
+                    @info DLMERRORS_LINE(buffer.data, line_start, line_end, current_line[]+total_line_skipped, current_line[]).message
+                end
+            end
         end
         if any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @warn "There are problems with parsing file at line $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
+                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, current_line[]+total_line_skipped).message
                 end
             end
             # reset track_problems
@@ -207,8 +212,8 @@ function _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize
 
 end
 
-# different function for reading multiple observations per line - the main different is here we push one observation at a time
-function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
+# different function for reading multiple observations per line - the main difference is: here we push one observation at a time
+function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -247,7 +252,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         else
             dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
         end
-        # we should have a strategy for this kind of problem, for now just let the end of line as endpoint
+        # we should have a strategy for this kind of problems, for now just let the end of line as endpoint
         dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
         anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
         if anything_is_wrong == 1
@@ -264,7 +269,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes,
         if j == n_cols && any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @warn "There are problems with parsing file for observation $(current_line[]+total_line_skipped): $(_write_warn_detail_columns(buffer.data, res, line_start, line_end, colnames, track_problems))the values are set as missing.\nMORE DETAILS: $(_write_warn_detail(buffer.data, line_start, line_end, res, current_line[], colnames))"
+                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, current_line[]+total_line_skipped).message
                 end
             end
             # reset track_problems
@@ -295,7 +300,7 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
     try
@@ -370,9 +375,9 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                 last_valid_buff = buffsize - (cur_position - hi + 1)
             end
             if multiple_obs
-                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
+                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
             else
-                _process_iobuff!(res, buffer, types, dlm, eol, cnt_read_bytes, buffsize, current_line, last_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems, total_line_skipped)
+                _process_iobuff!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems, total_line_skipped)
             end
                 # we need to break at some point
             current_line[] > limit && break
@@ -390,7 +395,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
 end
 
 # main distributer
-function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, quotation = nothing, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
+function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset 
 
     eol = UInt8.(linebreak)
     eol_first = first(eol)
@@ -551,7 +556,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
 end
 
 
-function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Function}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = LINEINFORMAT_DEFAULT)
+function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = LINEINFORMAT_DEFAULT)
 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
@@ -688,9 +693,44 @@ function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing 
     linebreak, outtypes
 end
 
-function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat::Dict{Int, <:Function} = Dict{Int, Function}(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
 
+"""
+    filereader(path; [...])
+
+Read a delimited file into `Julia`.
+
+# Keyword arguments
+
+* `types`: User can pass the types of each column of the input file by using the `types` keyword argument. User may pass a vector of types which includes every type of each column, or may pass a dictionary of types for few selected columns.
+* `delimiter`: To change the default delimiter, user must pass the `delimiter` keyword argument. The `delimiter` keyword argument only accept `Char` as delimiter. Additionally, user can pass a vector of `Char` which causes `filereader` to use them as alternative delimiters.
+* `dlmstr`: This keyword argument is used to pass a string as the delimiter for values.
+* `ignorerepeated`: If it is set as `true`, repeated delimiters will be ignored.
+* `header`: User must set this as `false` if the first line of the input file is not the column header. Additionally, user can pass a vector of columns' name, which will be used as the columns' header.
+* `linebreak`: The `filereader` function use the value of this option as line separator. It can accept a `Char` or a vector of `Char` where the length of the vector is less than or equal two. For some rare cases user may need to pass this option to assist `filereader` in reading the input file.
+* `guessingrows`: This provide the number of lines to be used for types detection. The `filereader` function will detect the types of the column more accurately if user increase this value, however, it costs more computation time.
+* `fixed`: This option is used for reading fixed width files. User must pass a dictionary of columns' locations (as a range) for reading a fixed width file.
+* `quotechar`: If the texts are quoted in the input file, user must pass the quoted character via this keyword argument.
+* `escapechar`: Declaring the escape char for quoted text.
+* `dtformat`: User must pass the date format of DateTime columns if they are different from the standard format. The `dtformat` keyword argument accept a dictionary of values.
+* `int_base`: The `filereader` can read integers with different bases. User can pass this information for a specific column. The value of bases must be passed as a dictionary, e.g. `Dict(1 => (Int32, 2))`.
+* `informat`: User can pass a dictionary which provides the information of the `informat` of selected columns.
+* `skipto`: It can be used to start reading a file from specific location.
+* `limit`: It can be used to limit the number of observations read from the input file.
+* `multiple_obs`: If it is set as `true`, the `filereader` function assumes there are more than one observation in each line of the input file.
+* `line_informat`: User can provide line informat via this keyword argument.
+* `buffsize`: User can provide any positive number for the buffer size. Each thread allocates the amount of `buffsize` and reads the values from the input file into it.
+* `lsize`: It indicated the line buffer size for reading the input files. For very wide table use may need to manually adjust this option. Its value must be less than `buffsize`.
+* `string_trim`: Setting this as `true` will trim the trailing blanks of strings before storing them into the output data set.
+* `makeunique`: If there are non-unique columns' names, this can resolve it by adding a suffix to the names.
+* `emptycolname`: If it is set to `true`, it generates a column name for columns with empty name.
+* `warn`: Control the maximum number of warning and information. Setting it to 0 will suppress warnings and information during reading the input file.
+* `eolwarn`: Control if the end-of-line character warning should be shown.
+* `threads`: For large files, the `filereader` function exploits all threads. However, this can be switch off by setting this argument as `false`.
+"""
+function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat::Dict{Int, <:Informats} = Dict{Int, Informat}(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat::Informats = LINEINFORMAT_DEFAULT)::Dataset
+    
     supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
+    
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
     ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
 
@@ -741,7 +781,8 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     else
         int_bases = nothing
     end
-    !all(intypes .∈ Ref(Set(supported_types))) && throw(ArgumentError("DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters, InlineStrings, TimeType, String, UUID"))
+
+    !all(intypes .∈ Ref(Set(supported_types))) && throw(ArgumentError("DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters, TimeType, String, InlineString, UUID"))
     !all(isascii.(delimiter)) && throw(ArgumentError("delimiter must be ASCII"))
 
     if multiple_obs

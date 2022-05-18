@@ -1,16 +1,20 @@
 module DLMReader
 
 using InMemoryDatasets
-using Reexport
-@reexport using Dates, InlineStrings
+using InlineStrings
+using Dates
 using UUIDs
-export filereader,
+
+export 
+    filereader,
     filewriter,
     # informats
+    Informats,
+    Informat,
+
     COMMA!,
     COMMAX!,
-    NUM_NA!,
-    CHAR_NA!,
+    NA!,
     BOOL!,
     STRIP!
 
@@ -22,7 +26,5 @@ include("reader.jl")
 include("writer.jl")
 
 # needs more works
-# include("precompile.jl")
-
-
+include("precompile.jl")
 end
