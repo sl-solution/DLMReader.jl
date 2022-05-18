@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Reading and Writing · DLMReader</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DLMReader</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../tutorial_basic/">Basic</a></li><li><a class="tocitem" href="../tutorial_adv/">Advanced</a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li class="is-active"><a class="tocitem" href>Reading and Writing</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#filereader"><span><code>filereader</code></span></a></li><li><a class="tocitem" href="#Keyword-arguments"><span>Keyword arguments</span></a></li><li class="toplevel"><a class="tocitem" href="#filewriter"><span><code>filewriter</code></span></a></li><li><a class="tocitem" href="#Keyword-arguments-2"><span>Keyword arguments</span></a></li></ul></li><li><a class="tocitem" href="../informat/">Informats</a></li></ul></li><li><a class="tocitem" href="../gallery/">Gallery</a></li><li><a class="tocitem" href="../performance/">Performance Tips</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Reading and Writing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Reading and Writing</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/sl-solution/DLMReader.jl/blob/master/docs/src/man/read.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h1><p>The <code>DLMReader</code> package has the <code>filereader</code> and <code>filerwriter</code> functions for reading and writing delimited files, respectively. They have a few keyword arguments which we explain each of them in this section.</p><h1 id="filereader"><a class="docs-heading-anchor" href="#filereader"><code>filereader</code></a><a id="filereader-1"></a><a class="docs-heading-anchor-permalink" href="#filereader" title="Permalink"></a></h1><p>User must pass the file name as the first argument of <code>filereader</code> to read a delimited file into <code>Julia</code>, i.e. <code>filereader(path; ...)</code>. The <code>filereader</code> function assumes that the observations are separated by comma and the first line of the input file contains the columns&#39; name, additionally, it assumes that the strings are not quoted. It scans the first 20 lines of the input file to detect <code>Int64</code> and <code>Float64</code> columns, and use <code>String</code> as the default type when the detection goes wrong. Thus, for a well-formatted csv file, user does not need to use any keyword argument. However, the <code>filereader</code> function provides some keyword arguments to give user extra flexibility for reading complex delimited files.</p><h2 id="Keyword-arguments"><a class="docs-heading-anchor" href="#Keyword-arguments">Keyword arguments</a><a id="Keyword-arguments-1"></a><a class="docs-heading-anchor-permalink" href="#Keyword-arguments" title="Permalink"></a></h2><ul><li><a href="#types">types</a></li><li><a href="#delimiter">delimiter</a></li><li><a href="#dlmstr">dlmstr</a></li><li><a href="#ignorerepeated">ignorerepeated</a></li><li><a href="#header">header</a></li><li><a href="#linebreak">linebreak</a></li><li><a href="#guessingrows">guessingrows</a></li><li><a href="#fixed">fixed</a></li><li><a href="#quotechar">quotechar</a></li><li><a href="#escapechar">escapechar</a></li><li><a href="#dtformat">dtformat</a></li><li><a href="#intbase">int_base</a></li><li><a href="#informat">informat</a></li><li><a href="#skipto">skipto</a></li><li><a href="#limit">limit</a></li><li><a href="#multipleobs">multiple_obs</a></li><li><a href="#lineinformat">line_informat</a></li><li><a href="#buffsize">buffsize</a></li><li><a href="#lsize">lsize</a></li><li><a href="#stringtrim">string_trim</a></li><li><a href="#makeunique">makeunique</a></li><li><a href="#emptycolname">emptycolname</a></li><li><a href="#warn">warn</a></li><li><a href="#eolwarn">eolwarn</a></li><li><a href="#threads">threads</a></li></ul><h3 id="types"><a class="docs-heading-anchor" href="#types"><code>types</code></a><a id="types-1"></a><a class="docs-heading-anchor-permalink" href="#types" title="Permalink"></a></h3><p>User can pass the types of each column of the input file by using the <code>types</code> keyword argument. User may pass a vector of types which includes every type of each column, or may pass a dictionary of types for few selected columns.</p><p><strong>Default:</strong> auto detection</p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2
+       12,13
+       1,2
+       &quot;&quot;&quot;), types = [Int, Float64])
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Float64? 
+─────┼────────────────────
+   1 │       12      13.0
+   2 │        1       2.0</code></pre><h3 id="delimiter"><a class="docs-heading-anchor" href="#delimiter"><code>delimiter</code></a><a id="delimiter-1"></a><a class="docs-heading-anchor-permalink" href="#delimiter" title="Permalink"></a></h3><p>To change the default delimiter, user must pass the <code>delimiter</code> keyword argument. The <code>delimiter</code> keyword argument only accept <code>Char</code> as delimiter. Additionally, user can pass a vector of <code>Char</code> which causes <code>filereader</code> to use them as alternative delimiters.</p><p><strong>Default:</strong> comma</p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1;x2
+       12;13
+       1;2
+       &quot;&quot;&quot;), delimiter = &#39;;&#39;)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="dlmstr"><a class="docs-heading-anchor" href="#dlmstr"><code>dlmstr</code></a><a id="dlmstr-1"></a><a class="docs-heading-anchor-permalink" href="#dlmstr" title="Permalink"></a></h3><p>This keyword argument is used to pass a string as the delimiter for values.</p><p><strong>Default:</strong> <code>nothing</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1|:|x2
+       12|:|13
+       1|:|2
+       &quot;&quot;&quot;), dlmstr = &quot;|:|&quot; )
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="ignorerepeated"><a class="docs-heading-anchor" href="#ignorerepeated"><code>ignorerepeated</code></a><a id="ignorerepeated-1"></a><a class="docs-heading-anchor-permalink" href="#ignorerepeated" title="Permalink"></a></h3><p>If it is set as <code>true</code>, repeated delimiters will be ignored.</p><p><strong>Default:</strong> <code>false</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,,x2
+       12,13
+       1,,,,2
+       &quot;&quot;&quot;), ignorerepeated = true)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="header"><a class="docs-heading-anchor" href="#header"><code>header</code></a><a id="header-1"></a><a class="docs-heading-anchor-permalink" href="#header" title="Permalink"></a></h3><p>User must set this as <code>false</code> if the first line of the input file is not the column header. Additionally, user can pass a vector of columns&#39; name, which will be used as the columns&#39; header.</p><p><strong>Default:</strong> <code>true</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;
+       12,13
+       1,2
+       &quot;&quot;&quot;), header = [:Col1, :Col2])
+2×2 Dataset
+ Row │ Col1      Col2     
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="linebreak"><a class="docs-heading-anchor" href="#linebreak"><code>linebreak</code></a><a id="linebreak-1"></a><a class="docs-heading-anchor-permalink" href="#linebreak" title="Permalink"></a></h3><p>The <code>filereader</code> function use the value of this option as line separator. It can accept a <code>Char</code> or a vector of <code>Char</code> where the length of the vector is less than or equal two. For some rare cases user may need to pass this option to assist <code>filereader</code> in reading the input file.</p><p><strong>Default:</strong> auto detection</p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;
+       x1,x2;12,13;1,2;&quot;&quot;&quot;), linebreak = &#39;;&#39;)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="guessingrows"><a class="docs-heading-anchor" href="#guessingrows"><code>guessingrows</code></a><a id="guessingrows-1"></a><a class="docs-heading-anchor-permalink" href="#guessingrows" title="Permalink"></a></h3><p>This provide the number of lines to be used for types detection. The <code>filereader</code> function will detect the types of the column more accurately if user increase this value, however, it costs more computation time.</p><p><strong>Default:</strong> 20</p><h3 id="fixed"><a class="docs-heading-anchor" href="#fixed"><code>fixed</code></a><a id="fixed-1"></a><a class="docs-heading-anchor-permalink" href="#fixed" title="Permalink"></a></h3><p>This option is used for reading fixed width files. User must pass a dictionary of columns&#39; locations (as a range) for reading a fixed width file.</p><p><strong>Default:</strong> <code>nothing</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;
+       12
+       34
+       &quot;&quot;&quot;), fixed = Dict(1=&gt;1:1, 2=&gt;2:2), header = false)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2
+   2 │        3         4</code></pre><h3 id="quotechar"><a class="docs-heading-anchor" href="#quotechar"><code>quotechar</code></a><a id="quotechar-1"></a><a class="docs-heading-anchor-permalink" href="#quotechar" title="Permalink"></a></h3><p>If the texts are quoted in the input file, user must pass the quoted character via this keyword argument.</p><p><strong>Default:</strong> <code>nothing</code> (the <code>filereader</code> assumes the texts are not quoted)</p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2
+       &quot;12&quot;,13
+       &quot;1&quot;,2
+       &quot;&quot;&quot;), quotechar = &#39;&quot;&#39;)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │       12        13
+   2 │        1         2</code></pre><h3 id="escapechar"><a class="docs-heading-anchor" href="#escapechar"><code>escapechar</code></a><a id="escapechar-1"></a><a class="docs-heading-anchor-permalink" href="#escapechar" title="Permalink"></a></h3><p>Declaring the escape char for quoted text.</p><p><strong>Default:</strong> <code>nothing</code> (the <code>filereader</code> assumes the text are not quoted)</p><h3 id="dtformat"><a class="docs-heading-anchor" href="#dtformat"><code>dtformat</code></a><a id="dtformat-1"></a><a class="docs-heading-anchor-permalink" href="#dtformat" title="Permalink"></a></h3><p>User must pass the date format of DataTime columns if they are different from the standard format. The <code>dtformat</code> keyword argument accept a dictionary of values.</p><p><strong>Default:</strong> <code>nothing</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;date1,date2
+       2020-1-1,2020/1/1
+       2020-2-2,2020/2/2
+       &quot;&quot;&quot;), dtformat = Dict(1 =&gt; dateformat&quot;y-m-d&quot;, 2 =&gt; dateformat&quot;y/m/d&quot;))
+2×2 Dataset
+ Row │ date1       date2      
+     │ identity    identity   
+     │ Date?       Date?      
+─────┼────────────────────────
+   1 │ 2020-01-01  2020-01-01
+   2 │ 2020-02-02  2020-02-02</code></pre><h3 id="int_base"><a class="docs-heading-anchor" href="#int_base"><code>int_base</code></a><a id="int_base-1"></a><a class="docs-heading-anchor-permalink" href="#int_base" title="Permalink"></a></h3><p>The <code>filereader</code> can read integers with different bases. User can pass this information for a specific column. The value of bases must be passed as a dictionary, e.g. <code>Dict(1 =&gt; (Int32, 2))</code>.</p><p><strong>Default:</strong> <code>nothing</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2
+       100,100
+       101,101
+       &quot;&quot;&quot;), int_base = Dict(1 =&gt; (Int, 2)))
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        4       100
+   2 │        5       101</code></pre><h3 id="informat"><a class="docs-heading-anchor" href="#informat"><code>informat</code></a><a id="informat-1"></a><a class="docs-heading-anchor-permalink" href="#informat" title="Permalink"></a></h3><p>User can pass a dictionary which provides the information of the <code>informat</code> of selected columns.</p><p><strong>Default:</strong> <code>nothing</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2
+       NA,12
+       1,NA
+       &quot;&quot;&quot;), informat = Dict(1:2 .=&gt; NA!))
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │  missing        12
+   2 │        1   missing </code></pre><h3 id="skipto"><a class="docs-heading-anchor" href="#skipto"><code>skipto</code></a><a id="skipto-1"></a><a class="docs-heading-anchor-permalink" href="#skipto" title="Permalink"></a></h3><p>It can be used to start reading a file from specific location.</p><p><strong>Default:</strong> 1</p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;COL1, COL2
+       1,2
+       2,3
+       3,4
+       &quot;&quot;&quot;), skipto = 3, header = false)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        2         3
+   2 │        3         4</code></pre><h3 id="limit"><a class="docs-heading-anchor" href="#limit"><code>limit</code></a><a id="limit-1"></a><a class="docs-heading-anchor-permalink" href="#limit" title="Permalink"></a></h3><p>It can be used to limit the number of observations read from the input file.</p><p><strong>Default:</strong> <code>Inf</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;COL1, COL2
+       1,2
+       2,3
+       3,4
+       &quot;&quot;&quot;), limit = 1)
+1×2 Dataset
+ Row │ COL1      COL2     
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2</code></pre><h3 id="multiple_obs"><a class="docs-heading-anchor" href="#multiple_obs"><code>multiple_obs</code></a><a id="multiple_obs-1"></a><a class="docs-heading-anchor-permalink" href="#multiple_obs" title="Permalink"></a></h3><p>If it is set as <code>true</code>, the <code>filereader</code> function assumes there are more than one observation in each line of the input file.</p><p><strong>Default:</strong> <code>false</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;1,2,3,4,5
+       6,7
+       &quot;&quot;&quot;), multiple_obs = true, header = [:x1, :x2], types = [Int, Int])
+4×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2
+   2 │        3         4
+   3 │        5         6
+   4 │        7   missing </code></pre><h3 id="line_informat"><a class="docs-heading-anchor" href="#line_informat"><code>line_informat</code></a><a id="line_informat-1"></a><a class="docs-heading-anchor-permalink" href="#line_informat" title="Permalink"></a></h3><p>User can provide line informat via this keyword argument.</p><p><strong>Default:</strong> <code>nothing</code></p><h3 id="buffsize"><a class="docs-heading-anchor" href="#buffsize"><code>buffsize</code></a><a id="buffsize-1"></a><a class="docs-heading-anchor-permalink" href="#buffsize" title="Permalink"></a></h3><p>User can provide any positive number for the buffer size. Each thread allocates the amount of <code>buffsize</code> and reads the values from the input file into it.</p><p><strong>Default:</strong> 2^16</p><h3 id="lsize"><a class="docs-heading-anchor" href="#lsize"><code>lsize</code></a><a id="lsize-1"></a><a class="docs-heading-anchor-permalink" href="#lsize" title="Permalink"></a></h3><p>It indicated the line buffer size for reading the input files. For very wide table use may need to manually adjust this option. Its value must be less than <code>buffsize</code>.</p><p><strong>Default:</strong> 2^15</p><h3 id="string_trim"><a class="docs-heading-anchor" href="#string_trim"><code>string_trim</code></a><a id="string_trim-1"></a><a class="docs-heading-anchor-permalink" href="#string_trim" title="Permalink"></a></h3><p>Setting this as <code>true</code> will trim the trailing blanks of strings before storing them into the output data set.</p><blockquote><p><code>DLMReader</code> shipped with the <code>STRIP!</code> informat which can be used to strip (removing leading and trailing blanks) any raw text before parsing.</p></blockquote><p><strong>Default:</strong> <code>false</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2
+       &quot;    fdh  &quot;,df
+       &quot;dkhfd    &quot;,dfadf
+       &quot;&quot;&quot;), quotechar = &#39;&quot;&#39;, string_trim = true)
+2×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ String?   String?  
+─────┼────────────────────
+   1 │     fdh   df
+   2 │ dkhfd     dfadf
+
+julia&gt; ds[:, :x1]
+2-element Vector{Union{Missing, String}}:
+ &quot;    fdh&quot;
+ &quot;dkhfd&quot;
+
+julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x1,x2,x3
+       1,   2020-2-2   , &quot; ff  &quot;
+       2,2020-1-1,&quot;343&quot;
+       &quot;&quot;&quot;), types = Dict(2 =&gt; Date), quotechar = &#39;&quot;&#39;, informat = Dict(2:3 .=&gt; STRIP!))
+2×3 Dataset
+ Row │ x1        x2          x3       
+     │ identity  identity    identity 
+     │ Int64?    Date?       String?  
+─────┼────────────────────────────────
+   1 │        1  2020-02-02  ff
+   2 │        2  2020-01-01  343
+
+julia&gt; ds[:, :x3]
+2-element Vector{Union{Missing, String}}:
+ &quot;ff&quot;
+ &quot;343&quot;</code></pre><h3 id="makeunique"><a class="docs-heading-anchor" href="#makeunique"><code>makeunique</code></a><a id="makeunique-1"></a><a class="docs-heading-anchor-permalink" href="#makeunique" title="Permalink"></a></h3><p>If there are non-unique columns&#39; names, this can resolve it by adding a suffix to the names.</p><p><strong>Default:</strong> <code>false</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x,x
+       1,2
+       &quot;&quot;&quot;), makeunique = true)
+1×2 Dataset
+ Row │ x         x_1      
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2</code></pre><h3 id="emptycolname"><a class="docs-heading-anchor" href="#emptycolname"><code>emptycolname</code></a><a id="emptycolname-1"></a><a class="docs-heading-anchor-permalink" href="#emptycolname" title="Permalink"></a></h3><p>If it is set to <code>true</code>, it generates a column name for columns with empty name.</p><p><strong>Default:</strong> <code>false</code></p><pre><code class="language-julia hljs">julia&gt; ds = filereader(IOBuffer(&quot;&quot;&quot;x,
+       1,2
+       &quot;&quot;&quot;), emptycolname = true)
+1×2 Dataset
+ Row │ x         NONAME1  
+     │ identity  identity 
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2</code></pre><h3 id="warn"><a class="docs-heading-anchor" href="#warn"><code>warn</code></a><a id="warn-1"></a><a class="docs-heading-anchor-permalink" href="#warn" title="Permalink"></a></h3><p>Control the maximum number of warning and information. Setting it to 0 will suppress warnings and information during reading the input file.</p><p><strong>Default:</strong> 20</p><h3 id="eolwarn"><a class="docs-heading-anchor" href="#eolwarn"><code>eolwarn</code></a><a id="eolwarn-1"></a><a class="docs-heading-anchor-permalink" href="#eolwarn" title="Permalink"></a></h3><p>Control if the end-of-line character warning should be shown.</p><p><strong>Default:</strong> <code>true</code></p><h3 id="threads"><a class="docs-heading-anchor" href="#threads"><code>threads</code></a><a id="threads-1"></a><a class="docs-heading-anchor-permalink" href="#threads" title="Permalink"></a></h3><p>For large files, the <code>filereader</code> function exploits all threads. However, this can be switch off by setting this argument as <code>false</code>.</p><p><strong>Default:</strong> <code>true</code></p><h1 id="filewriter"><a class="docs-heading-anchor" href="#filewriter"><code>filewriter</code></a><a id="filewriter-1"></a><a class="docs-heading-anchor-permalink" href="#filewriter" title="Permalink"></a></h1><p>The <code>filewriter</code> function writes a data set into disk. Behind the scene, it uses <code>byrow</code> function from <a href="https://github.com/sl-solution/InMemoryDatasets.jl">InMemoryDatasets.jl</a> to efficiently convert each row of the input data set into <code>UInt8</code>. The first argument of the <code>filewriter</code> must be a filename and the second argument must be the passed data set.</p><h2 id="Keyword-arguments-2"><a class="docs-heading-anchor" href="#Keyword-arguments-2">Keyword arguments</a><a class="docs-heading-anchor-permalink" href="#Keyword-arguments-2" title="Permalink"></a></h2><ul><li>delimiter</li><li>quotechar</li><li>mapformats</li><li>append</li><li>header</li><li>buffsize</li><li>lsize</li><li>threads</li></ul><h3 id="delimiter-2"><a class="docs-heading-anchor" href="#delimiter-2"><code>delimiter</code></a><a class="docs-heading-anchor-permalink" href="#delimiter-2" title="Permalink"></a></h3><p>By default, <code>filewriter</code> uses comma as delimiter, however, user can pass any other <code>Char</code> via the <code>delimiter</code> keyword argument.</p><p><strong>Default:</strong> comma</p><h3 id="quotechar-2"><a class="docs-heading-anchor" href="#quotechar-2"><code>quotechar</code></a><a class="docs-heading-anchor-permalink" href="#quotechar-2" title="Permalink"></a></h3><p>The <code>filewriter</code> function does not quote values, if this is desired, the quote <code>Char</code> must be passed via the <code>quotechar</code> keyword argument.</p><p><strong>Default:</strong> <code>nothing</code></p><h3 id="mapformats"><a class="docs-heading-anchor" href="#mapformats"><code>mapformats</code></a><a id="mapformats-1"></a><a class="docs-heading-anchor-permalink" href="#mapformats" title="Permalink"></a></h3><p>Setting this as <code>true</code> causes <code>filewriter</code> to write the formatted values.</p><p><strong>Default:</strong> <code>false</code></p><h3 id="append"><a class="docs-heading-anchor" href="#append"><code>append</code></a><a id="append-1"></a><a class="docs-heading-anchor-permalink" href="#append" title="Permalink"></a></h3><p>Setting this as <code>true</code> causes <code>filewriter</code> to append values to the end of the input file.</p><p><strong>Default:</strong> <code>false</code></p><h3 id="header-2"><a class="docs-heading-anchor" href="#header-2"><code>header</code></a><a class="docs-heading-anchor-permalink" href="#header-2" title="Permalink"></a></h3><p>The <code>filewriter</code> function writes column names in the output file, however, this can be prevented by setting <code>header = false</code>.</p><p><strong>Default:</strong> <code>true</code></p><h3 id="buffsize-2"><a class="docs-heading-anchor" href="#buffsize-2"><code>buffsize</code></a><a class="docs-heading-anchor-permalink" href="#buffsize-2" title="Permalink"></a></h3><p>This option controls the buffer size. </p><p><strong>Default:</strong> 2^24</p><h3 id="lsize-2"><a class="docs-heading-anchor" href="#lsize-2"><code>lsize</code></a><a class="docs-heading-anchor-permalink" href="#lsize-2" title="Permalink"></a></h3><p>This option controls the line size for writing values.</p><p><strong>Default:</strong> auto detection</p><h3 id="threads-2"><a class="docs-heading-anchor" href="#threads-2"><code>threads</code></a><a class="docs-heading-anchor-permalink" href="#threads-2" title="Permalink"></a></h3><p>If set <code>true</code>, <code>filewriter</code> exploits all threads.</p><p><strong>Default:</strong> <code>true</code></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tutorial_adv/">« Advanced</a><a class="docs-footer-nextpage" href="../informat/">Informats »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.17 on <span class="colophon-date" title="Wednesday 18 May 2022 08:12">Wednesday 18 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
