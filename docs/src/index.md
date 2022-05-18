@@ -6,17 +6,17 @@ This resource aims to teach you everything you need to know to get up and runnin
 
 DLMReader is a delimited file reader/writer for Julia. It reads/writes delimited file into/from [InMemoryDatasets.jl](https://github.com/sl-solution/InMemoryDatasets.jl).
 
-It is designed to be flexible, efficient, and scalable.
+It is designed to be flexible, efficient, and performant.
 
 ## Package manual
 
 ```@contents
 Pages = ["man/tutorial_basic.md",
           "man/tutorial_adv.md",
-           "man/read.md",
-            "man/write.md",
-            "man/informat.md",
-            "man/gallery.md"]
+          "man/read.md",
+          "man/informat.md",
+          "man/performance.md",
+          "man/gallery.md"]
 Depth = 2
 ```
 

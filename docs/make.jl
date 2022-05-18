@@ -23,11 +23,11 @@ makedocs(
             "Advanced" => "man/tutorial_adv.md"
         ],
         "User Guide" => Any[
-            "Reading" => "man/read.md",
-            "Writing" => "man/write.md",
+            "Reading and Writing" => "man/read.md",
             "Informats" => "man/informat.md"
         ],
-        "Gallery" => "man/gallery.md"
+        "Gallery" => "man/gallery.md",
+        "Performance Tips" => "man/performance.md"
         # "API" => Any[
         #     "Functions" => "lib/functions.md"
         # ]
