@@ -1,4 +1,4 @@
-using DLMReader, InMemoryDatasets
+using DLMReader, InMemoryDatasets, InlineStrings, Dates
 using Test
 dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
 @testset "general usage" begin
@@ -16,7 +16,7 @@ dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
     @test ds == Dataset(a = [1,3], b = ["HL, \"WORLD\"", "XY"])
     ds = filereader(IOBuffer("a,b\n1,2\n"), header = false)
     @test ds == Dataset(x1=["a","1"], x2=["b","2"])
-    ds = filereader(joinpath(dir, "d2.csv"), dtformat = Dict(3=>dateformat"y-m-d"), informat = Dict(3=>CHAR_NA!))
+    ds = filereader(joinpath(dir, "d2.csv"), dtformat = Dict(3=>dateformat"y-m-d"), informat = Dict(3=>NA!))
     DATE(x) = Date(x)
     DATE(::Missing) = missing
     @test ds == Dataset(a = [1,2,2,1], b=[2,3,4,2], c = DATE.([missing, "2001-01-02", "2020-04-02", "2000-12-01"]))
@@ -60,10 +60,10 @@ end
     @test ds == Dataset(x1=[1,123,4,4,5], x2=[2,3,2,4,missing])
     @test eltype(ds[:,2]) <: Union{Missing, Float64}
 
-    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, Characters{2}], multiple_obs=true, informat = Dict(1:5 .=> CHAR_NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
+    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, Characters{2}], multiple_obs=true, informat = Dict(1:5 .=> NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2, UInt8}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
-    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String3], multiple_obs=true, informat = Dict(1:5 .=> CHAR_NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
+    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String3], multiple_obs=true, informat = Dict(1:5 .=> NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2, UInt8}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
-    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String], multiple_obs=true, informat = Dict(1:5 .=> CHAR_NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
+    ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String], multiple_obs=true, informat = Dict(1:5 .=> NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2, UInt8}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
 end
