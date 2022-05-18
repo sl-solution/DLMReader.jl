@@ -1,4 +1,5 @@
 # DLMReader
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sl-solution.github.io/DLMReader.jl/stable)
 
 An efficient multi-threaded package for reading(writing) delimited files. It is designed as a file parser for `InMemoryDatasets.jl`.
 
