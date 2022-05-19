@@ -82,7 +82,9 @@ By default, the `filereader` function assumes that the column with the `Date` ty
 If values for date(time) are not represented as `yyyy-mm-dd` format, user can use the `dtformat` keyword argument to provide the right date format of a specific column. User must pass a dictionary of date format for specifying the date format:
 
 ```julia
-julia> tutorial = filereader(fname, delimiter = [';','|'], types = Dict(5 => Date), dtformat = Dict(5 => dateformat"y-m-d"));
+julia> tutorial = filereader(fname, delimiter = [';','|'], 
+                              types = Dict(5 => Date), 
+                              dtformat = Dict(5 => dateformat"y-m-d"));
 ```
 
 ## Using "informats"
@@ -92,7 +94,9 @@ The `DLMReader` package provides special functionality, called `informat`, to al
 We are going to use one of the predefined informats to parse the second column of `tutorial_1.csv` file. The second column of `tutorial_1.csv` file uses "`,`" as decimal point in numbers, this is a common practice in some european countries. To parse this column correctly, we can call the `COMMAX!` informat before parsing its values. The `COMMAX!` informat converts "`,`" to decimal points, and removes "`.`" (thousand separator) and "`€`" (U+20AC) from the numbers.
 
 ```julia
-julia> tutorial = filereader(fname, delimiter = [';','|'], types = Dict(5 => Date), informat = Dict(2 => COMMAX!))
+julia> tutorial = filereader(fname, delimiter = [';','|'], 
+                              types = Dict(5 => Date), 
+                              informat = Dict(2 => COMMAX!))
 ┌ Warning: There are problems with parsing file at line 3 (observation 2) :  
 │ Column 5 : date : Read from buffer ("2022-19-20")
 │ the values are set as missing.

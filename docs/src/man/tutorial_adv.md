@@ -91,7 +91,9 @@ Columns information
 Note that the type detection for some columns is incorrect, e.g. `pickup_datetime`, `dropoff_datetime`, `surcharge`, etc. In the next step we pass the incorrectly detected columns via the `types` and `dtformat` keyword arguments,
 
 ```julia
-julia> taxi = filereader(taxi_file, limit = 4, linebreak = ['\r','\n'], types = Dict([14,16,17] .=> Float64), dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"))
+julia> taxi = filereader(taxi_file, limit = 4, linebreak = ['\r','\n'], 
+                            types = Dict([14,16,17] .=> Float64), 
+                            dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"))
 4×18 Dataset
  Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
      │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
@@ -113,7 +115,9 @@ julia> _tmp = content(taxi, output = true)[2];
 
 julia> alltypes = disallowmissing(_tmp[:, :eltype]);
 
-julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], types = alltypes, dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"))
+julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], 
+                            types = alltypes, 
+                            dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"))
 ┌ Info: There might be more observations in the input file at line 11 (observation 10) than the number of columns in the output dataset.
 └  CMT,2010-03-15 15:35:04,2010-03-15 16:00:07,1,5.2000000000000002,-73.993639000000002,40.720208999999997,1,,,-73.946438000000001,40.778773999999999,Cas,16.100000000000001,0,0.5,0,0,16.600000000000001.
 ┌ Warning: There are problems with parsing the input file at line 11 (observation 10) : 
@@ -162,7 +166,10 @@ julia> function _l_infmt!(buff, lo, hi)
             lo, hi
         end
 julia> LINFMT! = Informat(_l_infmt!)
-julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], types = alltypes, dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"), line_informat = LINFMT!)
+julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], 
+                            types = alltypes,
+                            dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"), 
+                            line_informat = LINFMT!)
 20×18 Dataset
  Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
      │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
