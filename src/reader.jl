@@ -453,6 +453,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     else
         throw(ArgumentError("`header` can be true or false, or a list of variable names"))
     end
+    @assert length(types) == length(colnames) "Number of columns $(length(types)) and number of column names $(length(colnames)) are not equal"
     if !multiple_obs
         # how many bytes we should skip - we should use this information to have a better distribution of file into nt chunks.
         skip_bytes = f_pos
