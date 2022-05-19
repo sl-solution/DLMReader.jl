@@ -29,9 +29,6 @@ end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}; base = 10) where T <: Integer
     val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = 0
-    # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
-    # (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
-    # hasvalue ? res[current_line[]] = T(val) : res[current_line[]] = missing
     if val === nothing
         @simd for i in cc:nd
             @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
@@ -44,8 +41,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}; base = 10) whe
         res[current_line[]] = val
     end
     flag
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(T, lbuff, cc, nd)
-    # code == 33 ? res[current_line[]] = x : x = missing
 end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Real
     hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
@@ -63,9 +58,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Rea
         res[current_line[]] = missing
     end
     flag
-    # RES = Parsers.xparse(T, lbuff, cc, nd)
-    # RES.code == 33 ? res[current_line[]] = RES.val : res[current_line[]] = missing
-    # return 0
 end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
     hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
@@ -83,8 +75,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
         res[current_line[]] = missing
     end
     flag
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(Float32, lbuff, cc, nd)
-    # code == 33 ? res[current_line[]] = x : x = missing
 end
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{BigFloat})
@@ -112,8 +102,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{BigFloat})
 end
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
-    # code == 33 ? res[current_line[]] = x : x = missing
     l = nd - cc + 1
     cnt = 0
     for i in cc:nd
@@ -125,8 +113,6 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
 end
 
 function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
-    # code == 33 ? res[current_line[]] = x : x = missing
     newlo = cc
     newhi = nd
     for i in nd:-1:cc
@@ -139,8 +125,6 @@ end
 
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})
-    # (x, code, startpos, value_len, total_len) = Parsers.xparse(String, lbuff, cc, nd, Parsers.Options(ignoreemptylines=true))
-    # code == 33 ? res[current_line[]] = x : x = missing
     flag = 0
     newlo = cc
     newhi = nd
