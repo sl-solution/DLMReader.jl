@@ -33,7 +33,7 @@ function _EQ_(s::SubString{LineBuffer}, b)
     end
     return true
 end
-# minimum type defination for parsing TimeType data
+# minimum type definition for parsing TimeType data
 
 struct DT{N} <: AbstractString
     data::Vector{UInt8}
