@@ -33,7 +33,7 @@ julia> ds = filereader(IOBuffer("""date1,date2
    2 │ 2020-02-02  2020-02-02
 ```
 
-## Pass `lsize` can improve writing speed
+## Passing `lsize` can improve writing speed
 
 When the input data set contains many columns with float types, passing `lsize` can improve the performance significantly. This is due to the fact that the `filewriter` is very conservative when converting floats to string. In the following example we can have a rough idea about how many characters exists in each row of the data set, thus, passing our estimate to the `filewriter` function improves the performance.
 

@@ -149,3 +149,34 @@ Base.@propagate_inbounds function _bool!_infmt(x, lo, hi)
     lo,hi
 end
 BOOL! = Informat(_bool!_infmt)
+
+function _acc!_infmt(x, lo, hi)
+    for i in lo:hi
+        if x.data[i] == UInt8('(')
+            x.data[i] = UInt8('-')
+            for j in hi:-1:i+1
+                if x.data[j] == UInt8(')')
+                    x.data[j] = 0x20
+                    break
+                end
+            end
+            break         
+        end
+    end
+    lo, hi
+end
+ACC! = Informat(_acc!_infmt)
+
+function _compress!_infmt(x, lo, hi)
+    lo, hi = _strip!_infmt(x, lo, hi)
+    cnt = hi
+    for i in hi:-1:lo
+        if x.data[i] != 0x20
+            x.data[cnt] = x.data[i]
+            cnt -= 1
+            cnt < lo && break
+        end
+    end
+    cnt+1,hi
+end
+COMPRESS! = Informat(_compress!_infmt)

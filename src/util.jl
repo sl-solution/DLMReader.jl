@@ -16,8 +16,8 @@ struct DLMERRORS_PARSE <: DLMERRORS
 end
 struct DLMERRORS_LINE <: DLMERRORS
     message::String
-    function DLMERRORS_LINE(buff, l_st, l_en, line_number, row_number)
-        new("There might be more observations in the input file at line $line_number (observation $row_number) than the number of columns in the output dataset.\n $(unsafe_string(pointer(buff, l_st), l_en - l_st + 1)).")
+    function DLMERRORS_LINE(buff, l_st, l_en, line_number, row_number, more)
+        new("There might be $(more ? "more" : "less") observations in the input file at line $line_number (observation $row_number) than the number of columns in the output dataset.\n $(unsafe_string(pointer(buff, l_st), l_en - l_st + 1))")
     end
 end
 

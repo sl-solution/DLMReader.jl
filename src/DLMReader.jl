@@ -12,11 +12,13 @@ export
     Informats,
     Informat,
 
-    COMMA!,
-    COMMAX!,
-    NA!,
-    BOOL!,
-    STRIP!
+    COMMA!, # remove comma and dollar
+    COMMAX!, # same as COMMA! but for euro
+    NA!, # treats na as missing
+    BOOL!, # treats true false as 1 0
+    STRIP!, # removes leading and trailing blanks
+    ACC!,  # treats (numbers) as negative
+    COMPRESS! # compresses blanks
 
 include("linebuffer.jl")
 include("util.jl")

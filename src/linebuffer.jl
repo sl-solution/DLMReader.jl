@@ -23,6 +23,16 @@ Base.codeunit(s::LineBuffer, i::Integer) = s.data[i]
 
 Base.isvalid(s::LineBuffer, i::Int) = checkbounds(Bool, s, i)
 
+
+# preparing some tools which allow user to define Informat easier
+function _EQ_(s::SubString{LineBuffer}, b)
+    for (c1, c2) in zip(codeunits(s), codeunits(b))
+        if c1 != c2 
+            return false
+        end
+    end
+    return true
+end
 # minimum type defination for parsing TimeType data
 
 struct DT{N} <: AbstractString

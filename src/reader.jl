@@ -147,7 +147,16 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                     dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
                 end
                 # we should have a strategy for this kind of problems, for now just let the end of line as endpoint                
-                dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
+                if dlm_pos == 0
+                    dlm_pos = line_end + dlm_length
+                    if j < n_cols
+                        if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
+                            if colnames !== nothing
+                                @info DLMERRORS_LINE(buffer.data, line_start, line_end, current_line[]+total_line_skipped, current_line[], false).message
+                            end
+                        end
+                    end
+                end
                 anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
                     track_problems[1][j] = true
@@ -188,7 +197,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
         if dlm_pos < line_end
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @info DLMERRORS_LINE(buffer.data, line_start, line_end, current_line[]+total_line_skipped, current_line[]).message
+                    @info DLMERRORS_LINE(buffer.data, line_start, line_end, current_line[]+total_line_skipped, current_line[], true).message
                 end
             end
         end
@@ -432,7 +441,9 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     if (header isa AbstractVector) && (eltype(header) <: Union{AbstractString, Symbol})
         # colnames = header
         colnames = Symbol.(header)
-        InMemoryDatasets.make_unique!(colnames, colnames; makeunique = makeunique)
+        if makeunique
+            colnames = InMemoryDatasets.make_unique(colnames; makeunique = makeunique)
+        end
     elseif header === true
         f_pos, colnames = _generate_colname_based(path, eol, f_pos+1, lsize, lsize, types, delimiter, linebreak, buffsize, colwidth, dlmstr, quotechar, escapechar, emptycolname, ignorerepeated, multiple_obs, line_informat, total_line_skipped)
         isempty(colnames) && throw(ArgumentError("Detecting column names return empty array, this can happen if your file is empty or the column names are not detectable."))
@@ -489,7 +500,8 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         end
     end
     charbuff = [deepcopy(charbuff) for _ in 1:nt]
-
+    # reset number of warnings
+    number_of_errors_happen_so_far[] = 1
     if !multiple_obs
         cz = div(fs-skip_bytes, nt)
         lo = [(i-1)*cz+skip_bytes+1 for i in 1:nt]
