@@ -36,7 +36,6 @@ Base.:(∘)(f::Informats, g::Informats, h...) = ∘(f ∘ g, h...)
 _lineinfmt_default(x, lo, hi) = (lo, hi)
 LINEINFORMAT_DEFAULT = Informat(_lineinfmt_default)
 # This file contains some popular informats
-# This is experimental currently
 
 Base.@propagate_inbounds function _strip!_infmt(x, lo, hi)
     for i in lo:hi
@@ -71,10 +70,7 @@ function _comma!_infmt(x, lo, hi)
             cnt < lo && break
         end
     end
-    # for i in lo:cnt
-    #     x.data[i] = 0x20
-    # end
-    # fill!(view(x.data, lo:cnt), 0x20)
+    
     cnt+1,hi
 end
 COMMA! = Informat(_comma!_infmt)
@@ -82,7 +78,7 @@ COMMA! = Informat(_comma!_infmt)
 function _commax!_infmt(x, lo, hi)
     cnt = hi
     for i in hi:-1:lo
-        if !(x.data[i] == (UInt8('.'))) #  TODO we should take care of('€') it is not UInt8
+        if !(x.data[i] == (UInt8('.'))) 
             if x.data[i] == UInt8(',')
                 x.data[cnt] = UInt8('.')
             else
@@ -114,7 +110,6 @@ function _na!_infmt(x, lo, hi)
     if flag
         x.data[lo] = 0x20
         return lo,lo
-        # fill!(view(x.data, lo:hi), 0x20)
     end
     lo,hi
 end
@@ -131,18 +126,11 @@ Base.@propagate_inbounds function _bool!_infmt(x, lo, hi)
     elseif length(lo:hi) == 4
         if x.data[lo] in (0x54, 0x74) && x.data[lo+1] in (0x52,0x72) && x.data[lo+2] in (0x55, 0x75) && x.data[lo+3] in (0x45, 0x65)
             x.data[lo] = 0x31
-            # x.data[lo+1] = 0x20
-            # x.data[lo+2] = 0x20
-            # x.data[lo+3] = 0x20
             fill!(view(x.data, lo+1:lo+3), 0x20)
         end
     elseif length(lo:hi) == 5
         if x.data[lo] in (0x46, 0x66) && x.data[lo+1] in (0x41,0x61) && x.data[lo+2] in (0x4c, 0x6c) && x.data[lo+3] in (0x53, 0x73) && x.data[lo+4] in (0x45, 0x65)
             x.data[lo] = 0x30
-            # x.data[lo+1] = 0x20
-            # x.data[lo+2] = 0x20
-            # x.data[lo+3] = 0x20
-            # x.data[lo+4] = 0x20
             fill!(view(x.data, lo+1:lo+4), 0x20)
         end
     end
