@@ -7,6 +7,12 @@ An efficient multi-threaded package for reading(writing) delimited files. It is 
 
 It works very well for huge files (long or/and wide).
 
+## Documentation
+
+[Stable](https://sl-solution.github.io/DLMReader.jl/stable)
+
+## Features
+
 **The package supports:**
 
 > `DLMReader` doesn't guess `delimiter` and if it is different from `,`, it must be passed via the `delimiter` keyword argument. `DLMReader` neither checks if the text is quoted, user must pass `quotechar` option if it is desired.
