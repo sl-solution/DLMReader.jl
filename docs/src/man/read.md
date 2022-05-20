@@ -459,7 +459,7 @@ The `filewriter` function writes a data set into disk. Behind the scene, it uses
 * threads
 ### `delimiter`
 
-By default, `filewriter` uses comma as delimiter, however, user can pass any other `Char` via the `delimiter` keyword argument.
+By default, `filewriter` uses comma as delimiter, however, user can pass any other `Char` (or a vector of `Char`) via the `delimiter` keyword argument.
 
 **Default:** comma
 

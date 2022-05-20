@@ -43,7 +43,7 @@ julia> using InMemoryDatasets
 julia> ds = Dataset(rand([1.1,2.2,3.4], 100, 100000), :auto);
 
 julia> @time filewriter("_tmp.csv", ds, buffsize = 2^25);
-  7.943416 seconds (486.82 M allocations: 22.139 GiB, 36.77% gc time)
+  1.738533 seconds (54.90 M allocations: 2.547 GiB, 21.88% gc time)
 
 julia> @time filewriter("_tmp.csv", ds, buffsize = 2^25, lsize = 500000);
   0.207178 seconds (9.70 M allocations: 513.528 MiB)

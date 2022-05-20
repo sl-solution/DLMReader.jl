@@ -1,4 +1,5 @@
-_string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.FLOATS = Base.Ryu.neededdigits(T)
+# _string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.FLOATS = Base.Ryu.neededdigits(T)
+_string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.FLOATS = 30
 
 _ndigits(x) = ndigits(x)
 _ndigits(::Missing) = 0
@@ -12,6 +13,7 @@ end
 _string_size(x, f, threads, ::Type{T}) where T <: Bool = 1
 _string_size(x, f, threads, ::Type{T}) where T <: Characters{M, UInt8} where M= M
 
+_STRING_L(x::AbstractString) = ncodeunits(x)
 _STRING_L(x) = ncodeunits(string(x))
 _STRING_L(::Missing) = 0
 function _string_size(x, f, threads, ::Type{T}) where T <: Any
@@ -76,8 +78,41 @@ function WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delim, quotechar, threa
     WRITE(f, buff, cur_pos, lbuff, length(chunk*rchunk+1:n))
 end
 
-# basic function for writing csv files
-function filewriter(path::AbstractString, ds::AbstractDataset; delimiter = ',', quotechar = nothing, mapformats = false, append = false, header = true, lsize = :auto, buffsize = 2^24, threads::Bool = true)
+"""
+    filewriter(path::AbstractString, ds::AbstractDataset; [...])
+
+Write `ds` as text to a file (`path`) using the given delimiter `delimiter` (which defaults to comma). User can pass a single character or a vector of characters to the `delimiter` keyword argument.
+
+# Keyword arguments
+
+* `delimiter`: By default, `filewriter` uses comma as delimiter, however, user can pass any other `Char` (or a vector of `Char`) via the `delimiter` keyword argument.
+* `mapformats`: Setting this as `true` causes `filewriter` to write the formatted values.
+* `append`: Setting this as `true` causes `filewriter` to append values to the end of the input file.
+* `header`: The `filewriter` function writes column names in the output file, however, this can be prevented by setting `header = false`.
+* `buffsize`: This option controls the buffer size. 
+* `lsize`: This option controls the line size for writing values.
+* `threads`: If set `true`, `filewriter` exploits all threads.
+
+# Example
+
+```julia
+julia> using InMemoryDatasets
+
+julia> ds = Dataset(x=[1.0, 2.1, -2.0], y = 1:3)
+3×2 Dataset
+ Row │ x         y        
+     │ identity  identity 
+     │ Float64?  Int64?   
+─────┼────────────────────
+   1 │      1.0         1
+   2 │      2.1         2
+   3 │     -2.0         3
+
+julia> filewriter("_tmp.csv", ds)
+```
+"""
+function filewriter(path::AbstractString, ds::AbstractDataset; delimiter::Union{Char, Vector{Char}} = ',', quotechar::Union{Nothing, Char} = nothing, mapformats::Bool = false, append::Bool = false, header = true, lsize::Int = 0, buffsize::Int = 2^24, threads::Bool = true)
+    delimiter = reduce(vcat, collect(codeunits.(string.(delimiter))))
     ncols = InMemoryDatasets.ncol(ds)
     ff = Function[]
     if mapformats
@@ -88,7 +123,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delimiter = ',', 
         ff = repeat([identity], ncols)
     end
     n, p = size(ds)
-    if lsize == :auto
+    if lsize == 0
         lsize = _find_max_string_length(ds, UInt8.(delimiter), quotechar, mapformats, threads)
     else
         lsize = lsize
@@ -108,7 +143,7 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delimiter = ',', 
                 if j == ncols
                     write(f, '\n')
                 else
-                    write(f, delimiter)
+                    write(f, UInt8.(delimiter))
                 end
             end
         end
