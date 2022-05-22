@@ -306,7 +306,7 @@ function tryparse_with_missing(T, x, infmt)
     lo = 1
     hi = length(x)
     if infmt !== identity
-        infmt(_tmp, lo, hi)
+        infmt(_SUBSTRING_(_tmp, lo:hi))
     end
     flag = true
     @simd for i in lo:hi

@@ -6,7 +6,9 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         if !isempty(informat)
             _infmt! = get(informat, j, identity)
             if _infmt! !== identity
-                cc, en = _infmt!(buffer, cc, en)::Tuple{Int, Int}
+                _newsub_ = _infmt!(_SUBSTRING_(buffer, lo:hi))::SUBSTRING{LineBuffer}
+                cc = _newsub_.lo
+                en = _newsub_.hi
             end
         end
         @inbounds if types[j] <: Int64
@@ -125,7 +127,9 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
         int_cnt = 0
 
         line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
-        line_start, line_end = line_informat!(buffer, line_start, line_end)
+        _newline_ = line_informat!(_SUBSTRING_(buffer, line_start:line_end))
+        line_start = _newline_.lo
+        line_end = _newline_.hi
         field_start = line_start
         any_problem_with_parsing = 0
         for j in 1:n_cols
