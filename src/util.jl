@@ -612,3 +612,13 @@ CLOSE(x::IOBuffer) = seek(x, 0)
 @inline function get_informat_ptr(d::Dict{Symbol, Ptr{Nothing}}, s::Symbol)::Ptr{Nothing}
     d[s]
 end
+
+# correct type inference - only for error tracking
+function change_true_tracker!(x, j)
+    x[j] = true
+    nothing
+end
+function change_loc_tracker!(x, cur, lo, hi)
+    x[cur] = lo:hi
+    nothing
+end

@@ -149,7 +149,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
                 end
                 # we should have a strategy for this kind of problems, for now just let the end of line as endpoint                
-               if dlm_pos == 0
+                if dlm_pos == 0
                     dlm_pos = line_end + dlm_length
                     if j < n_cols
                         if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
@@ -162,9 +162,11 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                 
                anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
-                    track_problems[1][j] = true
+                    change_true_tracker!(track_problems[1]::BitVector, j)
+                    # track_problems[1][j] = true
                     if current_loc_track_problems < 21
-                        track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+                        change_loc_tracker!(track_problems[2]::Vector{UnitRange{Int}}, current_loc_track_problems, (new_lo == 0 ? field_start : new_lo), (new_hi == 0 ? dlm_pos - dlm_length : new_hi))
+                        # track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
                         current_loc_track_problems += 1
                     end
                 end
@@ -185,9 +187,11 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                 # dlm_pos doesn't contain dlm so it shouldn't be dlm_pos-1 like the non-fixed case
                 anything_is_wrong = parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
-                    track_problems[1][j] = true
+                    # track_problems[1][j] = true
+                    change_true_tracker!(track_problems[1]::BitVector, j)
                     if current_loc_track_problems < 21
-                        track_problems[2][current_loc_track_problems] = (fixed[j].start + offset):(dlm_pos)
+                        change_loc_tracker!(track_problems[2]::Vector{UnitRange{Int}}, current_loc_track_problems, (fixed[j].start + offset), (dlm_pos))
+                        # track_problems[2][current_loc_track_problems] = (fixed[j].start + offset):(dlm_pos)
                         current_loc_track_problems += 1
                     end
                 end
@@ -204,7 +208,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                 end
             end
         end
-       if any_problem_with_parsing>0
+        if any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
                     @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, current_line[]+total_line_skipped).message
@@ -268,9 +272,11 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
         dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
         anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
         if anything_is_wrong == 1
-            track_problems[1][j] = true
+            # track_problems[1][j] = true
+            change_true_tracker!(track_problems[1]::BitVector, j)
             if current_loc_track_problems < 21
-                track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
+                change_loc_tracker!(track_problems[2]::Vector{UnitRange{Int}}, current_loc_track_problems, (new_lo == 0 ? field_start : new_lo), (new_hi == 0 ? dlm_pos - dlm_length : new_hi))
+                # track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
                 current_loc_track_problems += 1
             end
         end
