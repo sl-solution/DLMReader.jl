@@ -223,24 +223,6 @@ function find_next_quote(buffer, lo, hi, qut, qutesc)
     end
     0
 end
-#
-#                 while true
-#                     if buffer[i]
-#                 if i < hi && i > lo+1 #interior
-#                     buffer[i+1] != qut && buffer[i-1] != qut && return i
-#                 elseif i <= lo + 1 && i < hi
-#                     buffer[i+1] != qut && return i
-#                 elseif i == hi && i > lo + 1
-#                     return i
-#                 elseif i == hi
-#                     return i
-#                 end
-#             end
-#         end
-#     end
-#     return 0
-# end
-
 
 function clean_escapechar!(buffer, lo, hi, qut, qutesc)
     cnt = hi
@@ -286,10 +268,52 @@ function check_if_a_buffer_has_end_of_line(buff, lo, hi, eol::Vector{UInt8})
 end
 
 
+function dist_calc(f, path, fs, skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
+    cz = div(fs-skip_bytes, nt)
+    lo = [(i-1)*cz+skip_bytes+1 for i in 1:nt]
+    hi = [i*cz+skip_bytes for i in 1:nt]
+    hi[end] = fs
+    # lo[1] += skip_bytes
+    cur_value = Vector{UInt8}(undef, eol_len)
+    for i in 1:length(hi)-1
+        seek(f, hi[i] - eol_len)
+        for k in 1:eol_len
+            cur_value[k] = read(f, UInt8)
+        end
+        if last(cur_value) != eol_last || first(cur_value) != eol_first
+            while true
+                if eol_len == 2
+                    seek(f, position(f) - 1)
+                end
+                read!(f, cur_value)
+                last(cur_value) == eol_last && first(cur_value) == eol_first && break
+            end
+            hi[i] = position(f)
+            lo[i+1] = hi[i] + 1
+        end
+    end
 
-# function move_cursor(eol_reached, dlm_pos, dlm, eol)
-#     eol_reached ? return dlm_pos+length(eol) : return dlm_pos + length(dlm)
-# end
+    ns = fill(1, nt)
+    if nt > 1
+        Threads.@threads for i in 1:nt
+            ns[i] = count_lines_of_file(path, lo[i], hi[i], eol)
+        end
+    else
+        for i in 1:nt
+            ns[i] = count_lines_of_file(path, lo[i], hi[i], eol; limit = limit)
+        end
+    end
+
+    line_hi = cumsum(ns)
+    if issorted(line_hi)
+        last_chunk_to_read = searchsortedfirst(line_hi, limit)
+    else
+        throw(ArgumentError("The current buffer size and line size are too small increase them by setting `lsize` and `buffsize`"))
+    end
+   
+    line_lo = [1; line_hi[1:end] .+ 1]
+    line_lo, line_hi, lo, hi, ns, last_chunk_to_read
+end
 
 
 function _find_how_many_dlm(headerl, dlm)
@@ -583,3 +607,8 @@ FILESIZE(f::IOBuffer) = f.size
 
 CLOSE(f) = close(f)
 CLOSE(x::IOBuffer) = seek(x, 0)
+
+# correct type inference - only for DLMReader_Registered_Informats
+@inline function get_informat_ptr(d::Dict{Symbol, Ptr{Nothing}}, s::Symbol)::Ptr{Nothing}
+    d[s]
+end

@@ -11,7 +11,7 @@ function _string_size(x, f, threads, ::Type{T}) where T <: InMemoryDatasets.INTE
     end
 end
 _string_size(x, f, threads, ::Type{T}) where T <: Bool = 1
-_string_size(x, f, threads, ::Type{T}) where T <: Characters{M, UInt8} where M= M
+_string_size(x, f, threads, ::Type{T}) where T <: Characters{N} where N = N
 
 _STRING_L(x::AbstractString) = ncodeunits(x)
 _STRING_L(x) = ncodeunits(string(x))

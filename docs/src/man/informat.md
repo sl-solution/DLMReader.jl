@@ -2,7 +2,7 @@
 
 The `DLMReader` package uses `informat` to call a special type of functions on raw text before parsing its values. This gives a flexible feature to `DLMReader` and enables it to handle messy delimited files.
 
-The package is shipped with some predefined `informat`s which are listed (new informats may be added to future releases) below:
+The package is shipped with some pre-registered `informat`s which are listed (new informats may be added to future releases) below:
 
 * `STRIP!`: Remove leading and trailing blanks
 * `COMMA`: Remove `$`, `£`, and `,`(thousands separators) from the numbers
@@ -12,6 +12,14 @@ The package is shipped with some predefined `informat`s which are listed (new in
 * `ACC!`: Treat numbers in parentheses (Accounting format) as negative values, i.e. it replaces `(` with `-` and `)` with blank.
 * `COMPRESS!`: Remove all blanks (`0x20`)
 
-Use "`∘`" to combine multiple informats, e.g. `COMMA! ∘ NA! ∘ COMPRESS!`, i.e. compress the raw text first, remove `na` characters, and for the rest treat them as `COMMA!`.
+Users can define their own informats, which is basically a function with one positional argument. The function must accept a special mutable string and return it (or a subset of it). To use the defined function as `informat`, user must register it by calling the `register_informat` function.
 
-Power users may define their own informats. To add a new `Informat` must define a function. The user defined functions must have three positional arguments. The first one is the input line buffer, and the second and the third one is the lower and upper bound of the line buffer which the functions have access to, respectively. The line buffer is an `AbstractString` and its `data` field is `UInt8`. The user defined function can replace any element of `data` but it can not resize it or go beyond the lower and upper bounds. It must return the original or adjusted lower and upper bounds (the adjusted value must be within the original bound). User must then wrap the defined function with `Informat` to register the new function as the `DLMReader` informat.
+## Supported string manipulation functions
+
+The function used for informat must accept a special mutable string type and return it. Thus, user must only modify the input argument in-place. Currently, few string manipulation functions are optimised for this purpose: (in the following paragraph `x` is referring to the argument passed to user defined informat)
+
+* **isequal**: User can use `isequal` to check if the input function or a sub-string of it is equal to a string.
+* **setindex!**: To assign a string to the input argument, use `setindex!(x, "newtext")` syntax. If the length of new text is smaller than `x`, it will be padded with blank (0x20), if it is longer than `x` it will be truncated.
+* **replace!**: User can use `replace!` to replace part of the input argument. For instance `replace!(x, "12"=>"21")` replace every occurrence of "`12`" with "`21`". Note that shorter replacing text will be padded with blank and longer ones will be truncated.
+* **occursin**: `occursin("text", x)` determines whether the first argument is a substring of the second.
+* **contains**: `contains(x, "text")` determines whether the second argument is a substring of the first.

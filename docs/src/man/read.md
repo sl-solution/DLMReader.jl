@@ -6,6 +6,8 @@ The `DLMReader` package has the `filereader` and `filerwriter` functions for rea
 
 User must pass the file name as the first argument of `filereader` to read a delimited file into `Julia`, i.e. `filereader(path; ...)`. The `filereader` function assumes that the observations are separated by comma and the first line of the input file contains the columns' name, additionally, it assumes that the strings are not quoted. It scans the first 20 lines of the input file to detect `Int64` and `Float64` columns, and use `String` as the default type when the detection goes wrong. Thus, for a well-formatted csv file, user does not need to use any keyword argument. However, the `filereader` function provides some keyword arguments to give user extra flexibility for reading complex delimited files.
 
+> `filereader` treats empty strings and "`.`" as missing
+
 ## Keyword arguments
 
 * [types](#types)

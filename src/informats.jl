@@ -1,46 +1,34 @@
-abstract type Informats end
-struct Informat{F} <: Informats
-    f::F
-    function Informat{F}(f) where F
-        @assert Core.Compiler.return_type(f, (SUBSTRING{LineBuffer}, )) == SUBSTRING{LineBuffer} "informat must return its input or a subset of its input"
-        new{F}(f)
+global DLMReader_Registered_Informats = Dict{Symbol, Ptr{Nothing}}()
+
+NAMEOF(f::ComposedFunction) = NAMEOF(f.outer) * "_" * NAMEOF(f.inner)
+NAMEOF(f) = string(nameof(f))
+
+function register_informat(f, NAME = NAMEOF(f); quiet = false)
+    @assert Core.Compiler.return_type(f, Tuple{SUBSTRING}) == SUBSTRING "informat must return its input or a subset of its input"
+    
+    f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(f)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
+    flag = false
+    if haskey(DLMReader_Registered_Informats, Symbol(NAME))
+        flag = true
     end
-    function Informat(f)
-        @assert Core.Compiler.return_type(f, (SUBSTRING{LineBuffer},)) == SUBSTRING{LineBuffer} "informat must return its input or a subset of its input"
-        new{Core.Typeof(f)}(f)
+    push!(DLMReader_Registered_Informats, Symbol(NAME) => f_ptr)
+    if flag
+        @warn "Informat $(NAME) has been overridden"
     end
+    if !quiet
+        @info "Informat $(NAME) has been registered"
+    end
+    nothing
 end
 
-
-(c::Informats)(x) = c.f(x)
-
-# The following functions are minimum requirement for allowing something like Dict(1:3 .=> NA!)
-Base.length(::Informats) = 1
-Base.iterate(x::Informats) = (x, nothing)
-Base.iterate(x::Informats, ::Nothing) = nothing
-
-# composed informat
-struct ComposedInformat{O,I} <: Informats
-    outer::O
-    inner::I
-    ComposedInformat{O, I}(outer, inner) where {O, I} = new{O, I}(outer, inner)
-    ComposedInformat(outer, inner) = new{Core.Typeof(outer),Core.Typeof(inner)}(outer, inner)
-end
-
-
-(c::ComposedInformat)(x) = c.outer(c.inner(x))
-
-Base.:(∘)(f::Informats) = f
-Base.:(∘)(f::Informats, g::Informats) = ComposedInformat(f, g)
-Base.:(∘)(f::Informats, g::Informats, h...) = ∘(f ∘ g, h...)
-
+register_informat(f::ComposedFunction, NAME = NAMEOF(f); quiet = false) = register_informat(x->f.outer(f.inner(x)), NAME, quiet = quiet)
 
 ### line informat - informat that is applied to whole line before passing it for parsing
 _lineinfmt_default(x) = x
-LINEINFORMAT_DEFAULT = Informat(_lineinfmt_default)
+LINEINFORMAT_DEFAULT(x) = x
 # This file contains some popular informats
 
-Base.@propagate_inbounds function _strip!_infmt(x)
+Base.@propagate_inbounds function STRIP!(x)
     lo = x.lo
     hi = x.hi
     for i in lo:hi
@@ -59,7 +47,6 @@ Base.@propagate_inbounds function _strip!_infmt(x)
     _SUBSTRING_(x.string, lo:hi)
 end
 
-STRIP! = Informat(_strip!_infmt)
 
 # In general any function defined as informat must have these specifications:
 # * it must take three positional arguments, x, lo, hi, where x is a custom structure and x.data is a vector of UInt8
@@ -67,7 +54,7 @@ STRIP! = Informat(_strip!_infmt)
 # * function must do the operations in place and return lo,hi or revised lo,hi
 
 
-function _comma!_infmt(x)
+function COMMA!(x)
     lo = x.lo
     hi = x.hi
     cnt = hi
@@ -78,12 +65,14 @@ function _comma!_infmt(x)
             cnt < lo && break
         end
     end
+
+    # to show meaningful errors
+    fill!(view(x.string.data, lo:cnt), 0x20)
     
     _SUBSTRING_(x.string, cnt+1:hi)
 end
-COMMA! = Informat(_comma!_infmt)
 
-function _commax!_infmt(x)
+function COMMAX!(x)
     lo = x.lo
     hi = x.hi
     cnt = hi
@@ -103,15 +92,17 @@ function _commax!_infmt(x)
             fill!(view(x.string.data, i-2:i), 0x20)
         end
     end
+
+    fill!(view(x.string.data, lo:cnt), 0x20)
+    
     _SUBSTRING_(x.string, cnt+1:hi)
 end
-COMMAX! = Informat(_commax!_infmt)
 
 # treats NA,na,Na,nA,... as missing value for numeric columns
-function _na!_infmt(x)
+function NA!(x)
     lo = x.lo
     hi = x.hi
-    _newsub_ = _strip!_infmt(x)
+    _newsub_ = STRIP!(x)
     lo = _newsub_.lo
     hi = _newsub_.hi
     flag = false
@@ -121,16 +112,14 @@ function _na!_infmt(x)
         end
     end
     if flag
-        x.string.data[lo] = 0x20
-        return _SUBSTRING_(x.string, lo:lo)
+        fill!(view(x.string.data, lo:hi), 0x20)
     end
     _SUBSTRING_(x.string, lo:hi)
 end
-NA! = Informat(_na!_infmt)
 
-Base.@propagate_inbounds function _bool!_infmt(x)
+Base.@propagate_inbounds function BOOL!(x)
 
-    _newsub_ = _strip!_infmt(x)
+    _newsub_ = STRIP!(x)
     lo = _newsub_.lo
     hi = _newsub_.hi
     if length(lo:hi) == 1
@@ -152,9 +141,8 @@ Base.@propagate_inbounds function _bool!_infmt(x)
     end
     _SUBSTRING_(x.string, lo:hi)
 end
-BOOL! = Informat(_bool!_infmt)
 
-function _acc!_infmt(x)
+function ACC!(x)
     lo = x.lo
     hi = x.hi
     for i in lo:hi
@@ -171,10 +159,9 @@ function _acc!_infmt(x)
     end
     _SUBSTRING_(x.string, lo:hi)
 end
-ACC! = Informat(_acc!_infmt)
 
-function _compress!_infmt(x)
-    _newsub_ = _strip!_infmt(x)
+function COMPRESS!(x)
+    _newsub_ = STRIP!(x)
     lo = _newsub_.lo
     hi = _newsub_.hi
     cnt = hi
@@ -185,6 +172,6 @@ function _compress!_infmt(x)
             cnt < lo && break
         end
     end
+    fill!(view(x.string.data, lo:cnt), 0x20)
     _SUBSTRING_(x.string, cnt+1:hi)
 end
-COMPRESS! = Informat(_compress!_infmt)

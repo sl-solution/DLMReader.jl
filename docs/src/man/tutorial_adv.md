@@ -22,6 +22,8 @@ In this tutorial we use the `filereader` function to read this file into `Julia`
 
 ```julia
 julia> taxi = filereader(taxi_file, limit = 4)
+┌ Info: There might be less observations in the input file at line 2 (observation 1) than the number of columns in the output dataset.
+└  
 4×18 Dataset
  Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
      │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
@@ -32,7 +34,6 @@ julia> taxi = filereader(taxi_file, limit = 4)
    3 │ CMT        2010-03-15 11:44:31  2010-03-15 11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
    4 │ CMT        2010-03-15 11:07:30  2010-03-15 11:21:39                2            2.2          -73.9574          40.78            1                   0           -73.9838
                                                                                                                                                                   8 columns omitted
-
 ```
 Note the first row of the output data set is strange, and the output data set is truncated, thus, we cannot see the detected type of columns. We first fix the problem with the first observation. Since the first cell is filled with "`\r`" we should suspect that the end-of-line character for this file might be detected incorrectly. The `filereader` package allows user to pass the end-of-line character via the `linebreak` keyword argument. In general, "`\n`" is the end-of-line character for most delimited file, however, in some operating systems "`\r`", "`\r\n`", etc might be used for this purpose. Using trial and error (there are other ways rather than trial and error) we noticed that the end-of-line for this file is "`\r\n`", and there is an extra "`\n`" in the first line of the file which has puzzled the automatic detection. Thus, we rerun the code and pass the `linebreak` keyword argument to fix the first issue of this file,
 
@@ -148,24 +149,21 @@ Additionally, when the `filereader` cannot parse a particular values, it provide
 
 In the above example, we can see that the 11th line of the input file has an issue. An investigation reveals that the problem is due to extra "`,`" in place of missing values, i.e. near "`1,,,-73.946438000000001`". This causes a shift in values, thus, the `filereader` function fails to parse the value of the 13th column. This problem is a data entry problem and we cannot fix it unless there is a systematic pattern for such problems. Fortunately, for this specific file the patter is fixed for all lines so we can exploit some features of the `DLMReader` package to fix the issue.
 
-To fix the aforementioned problem, we define a `Informat` which reads a line from the input file and modify its contents in-place and pass this to the `filereader` function via  `line_informat`.
+To fix the aforementioned problem, we define a new informat which reads a line from the input file and modify its contents in-place and pass this to the `filereader` function via  `line_informat`.
 
 The logic that we are going to follow is "replacing the second `,` in `,,,` with space". Note that this may not make sense for any other files, thus, user must search for a particular  pattern in each case.
 
-The `line_informat` keyword argument accepts an `Informat` which its first argument is a special structure with `data` field (vector of `UInt8`) and the second and third arguments are the lower and upper indices which the defined `Informat` has access. 
+The `line_informat` keyword argument accepts a registered informat which is a function with one positional argument, a special type of mutable string.
 
 > Note that the `line_informat` informat is called on each line of the input file, thus, use low level programming to avoid any allocation.
 
 ```julia
-julia> function _l_infmt!(buff, lo, hi)
-            for i in lo:hi-3
-                if buff.data[i] == buff.data[i+1] == buff.data[i+2] == 0x2c
-                    buff.data[i+1] = 0x20
-                end
-            end
-            lo, hi
+julia> function LINFMT!(x)
+            replace!(x, ",,," => ", ,")
         end
-julia> LINFMT! = Informat(_l_infmt!)
+julia> register_informat(LINFMT!)
+    [ Info: Informat LINFMT! has been registered
+
 julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], 
                             types = alltypes,
                             dtformat = Dict(2:3 .=> dateformat"y-m-d H:M:S"), 

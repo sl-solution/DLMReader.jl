@@ -11,15 +11,12 @@ Using `String` causes garbage collection and it must be avoided when possible.
 In many cases using `informat` can improve the performance of reading huge files. For instances, if there are two columns in the input file which both are `Date` but with different `DataFormat`, using `informat` to convert them into the same `DateFormat` improves the performance,
 
 ```julia
-julia> function _date_infmt!(x, lo, hi)
-           for i in lo:hi
-               if x.data[i] == UInt('/')
-                   x.data[i] = UInt('-')
-               end
-           end
-           lo, hi
+julia> function DINFMT!(x)
+           replace!(x, "/" => "-")
        end
-julia> DINFMT! = Informat(_date_infmt!)
+julia> register_informat(DINFMT!)
+  [ Info: Informat DINFMT! has been registered
+  
 julia> ds = filereader(IOBuffer("""date1,date2
        2020-1-1,2020/1/1
        2020-2-2,2020/2/2
@@ -43,8 +40,8 @@ julia> using InMemoryDatasets
 julia> ds = Dataset(rand([1.1,2.2,3.4], 100, 100000), :auto);
 
 julia> @time filewriter("_tmp.csv", ds, buffsize = 2^25);
-  1.738533 seconds (54.90 M allocations: 2.547 GiB, 21.88% gc time)
+  1.378465 seconds (54.90 M allocations: 2.547 GiB, 19.67% gc time)
 
 julia> @time filewriter("_tmp.csv", ds, buffsize = 2^25, lsize = 500000);
-  0.207178 seconds (9.70 M allocations: 513.528 MiB)
+  0.214730 seconds (9.80 M allocations: 516.580 MiB)
 ```

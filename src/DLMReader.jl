@@ -9,8 +9,7 @@ export
     filereader,
     filewriter,
     # informats
-    Informats,
-    Informat,
+    register_informat, 
 
     COMMA!, # remove comma and dollar
     COMMAX!, # same as COMMA! but for euro
@@ -29,4 +28,13 @@ include("writer.jl")
 
 # needs more works
 include("precompile.jl")
+function __init__()
+    # register build-in informats
+    register_informat(NA!; quiet = true)
+    register_informat(COMMA!; quiet = true)
+    register_informat(COMMAX!; quiet = true)
+    register_informat(STRIP!; quiet = true)
+    register_informat(ACC!; quiet = true)
+    register_informat(COMPRESS!; quiet = true)   
+end
 end

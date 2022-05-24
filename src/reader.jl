@@ -4,17 +4,19 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         cc = lo
         en = hi
         if !isempty(informat)
-            _infmt! = get(informat, j, identity)
-            if _infmt! !== identity
-                _newsub_ = _infmt!(_SUBSTRING_(buffer, lo:hi))::SUBSTRING{LineBuffer}
-                cc = _newsub_.lo
-                en = _newsub_.hi
+            infmt = get(informat, j, :identity)
+            if infmt !== :identity
+                informat_fun_ptr = get_informat_ptr(DLMReader_Registered_Informats, infmt)
+                (new_lo, new_hi) = ccall(informat_fun_ptr, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, lo, hi)
+                _newsub_ = SUBSTRING(buffer, new_lo, new_hi)
+                cc = (_newsub_.lo)::Int
+                en = (_newsub_.hi)::Int
             end
         end
         @inbounds if types[j] <: Int64
-            flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
+           flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
         elseif types[j] <: Float64
-            flag = buff_parser(res[j]::Vector{Union{Missing, Float64}}, buffer.data, cc, en, current_line, Float64)
+           flag = buff_parser(res[j]::Vector{Union{Missing, Float64}}, buffer.data, cc, en, current_line, Float64)
         elseif types[j] <: Bool
             flag = buff_parser(res[j]::Vector{Union{Missing, Bool}}, buffer, cc, en, current_line, Bool)
         elseif types[j] <: Date
@@ -43,38 +45,38 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
             flag = buff_parser(res[j]::Vector{Union{Missing,String7}}, buffer.data, cc, en, current_line,String7)
         elseif types[j] <: String15
             flag = buff_parser(res[j]::Vector{Union{Missing,String15}}, buffer.data, cc, en, current_line,String15)
-        elseif types[j] <: Characters{3, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{3, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{3, UInt8})
-        elseif types[j] <: Characters{5, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{5, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{5, UInt8})
-        elseif types[j] <: Characters{8, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{8, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{8, UInt8})
-        elseif types[j] <: Characters{10, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{10, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{10, UInt8})
-        elseif types[j] <: Characters{11, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{11, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{11, UInt8})
-        elseif types[j] <: Characters{12, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{12, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{12, UInt8})
-        elseif types[j] <: Characters{13, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{13, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{13, UInt8})
-        elseif types[j] <: Characters{14, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{14, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{14, UInt8})
-        elseif types[j] <: Characters{15, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{15, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{15, UInt8})
-        elseif types[j] <: Characters{1, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{1, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{1, UInt8})
-        elseif types[j] <: Characters{2, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{2, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{2, UInt8})
-        elseif types[j] <: Characters{4, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{4, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{4, UInt8})
-        elseif types[j] <: Characters{6, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{6, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{6, UInt8})
-        elseif types[j] <: Characters{7, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{7, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{7, UInt8})
-        elseif types[j] <: Characters{9, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{9, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{9, UInt8})
-        elseif types[j] <: Characters{16, UInt8}
-            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{16, UInt8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{16, UInt8})
+        elseif types[j] <: Characters{3}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{3}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{3})
+        elseif types[j] <: Characters{5}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{5}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{5})
+        elseif types[j] <: Characters{8}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{8})
+        elseif types[j] <: Characters{10}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{10}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{10})
+        elseif types[j] <: Characters{11}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{11}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{11})
+        elseif types[j] <: Characters{12}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{12}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{12})
+        elseif types[j] <: Characters{13}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{13}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{13})
+        elseif types[j] <: Characters{14}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{14}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{14})
+        elseif types[j] <: Characters{15}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{15}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{15})
+        elseif types[j] <: Characters{1}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{1}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{1})
+        elseif types[j] <: Characters{2}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{2}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{2})
+        elseif types[j] <: Characters{4}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{4}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{4})
+        elseif types[j] <: Characters{6}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{6}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{6})
+        elseif types[j] <: Characters{7}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{7}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{7})
+        elseif types[j] <: Characters{9}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{9}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{9})
+        elseif types[j] <: Characters{16}
+            flag = buff_parser(res[j]::Vector{Union{Missing,Characters{16}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{16})
         elseif types[j] <: Time
             flag = buff_parser(res[j]::Vector{Union{Missing, Time}}, buffer, cc, en, current_line, df[dt_cnt], Time)
         elseif types[j] <: String31
@@ -104,9 +106,6 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         end
         flag
 end
-
-
-
 function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
@@ -114,7 +113,6 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
     dlm_pos = 0
     #keeping track of number of warnings
     warn_pass_end_of_line = 0
-
     dlmstr === nothing ? dlm_length = 1  : dlm_length = length(dlm)
     anything_is_wrong = 0
     any_problem_with_parsing = 0
@@ -126,8 +124,8 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
         dt_cnt = 0
         int_cnt = 0
 
-        line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
-        _newline_ = line_informat!(_SUBSTRING_(buffer, line_start:line_end))
+       line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
+       _newline_ = line_informat!(_SUBSTRING_(buffer, line_start:line_end))
         line_start = _newline_.lo
         line_end = _newline_.hi
         field_start = line_start
@@ -148,10 +146,10 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                         new_lo, new_hi = clean_escapechar!(buffer, new_lo, new_hi, quotechar, escapechar)
                     end
                 else
-                    dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
+                   dlm_pos, new_lo, new_hi = find_next_delim(buffer.data, field_start, line_end, dlm, dlmstr, ignorerepeated)
                 end
                 # we should have a strategy for this kind of problems, for now just let the end of line as endpoint                
-                if dlm_pos == 0
+               if dlm_pos == 0
                     dlm_pos = line_end + dlm_length
                     if j < n_cols
                         if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
@@ -161,7 +159,8 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                         end
                     end
                 end
-                anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
+                
+               anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, int_cnt, j, informat, int_bases, string_trim)
                 if anything_is_wrong == 1
                     track_problems[1][j] = true
                     if current_loc_track_problems < 21
@@ -198,14 +197,14 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
             any_problem_with_parsing += anything_is_wrong
             dlm_pos > line_end && break
         end
-        if dlm_pos < line_end
+       if dlm_pos < line_end
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
                     @info DLMERRORS_LINE(buffer.data, line_start, line_end, current_line[]+total_line_skipped, current_line[], true).message
                 end
             end
         end
-        if any_problem_with_parsing>0
+       if any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
                     @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, current_line[]+total_line_skipped).message
@@ -313,7 +312,7 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
     try
@@ -408,7 +407,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
 end
 
 # main distributer
-function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset 
+function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset 
 
     eol = UInt8.(linebreak)
     eol_first = first(eol)
@@ -490,10 +489,10 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     for j in 1:length(types)
         if types[j] <: Characters
             if types[j] == Characters
-                types[j] = Characters{8, UInt8}
+                types[j] = Characters{8}
                 push!(charbuff, Vector{UInt8}(undef, 8))
             else
-                types[j] = Characters{sizeof(types[j]), UInt8}
+                types[j] = Characters{sizeof(types[j])}
                 push!(charbuff, Vector{UInt8}(undef, sizeof(types[j])))
             end
         elseif types[j] <: TimeType
@@ -508,51 +507,17 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
     # reset number of warnings
     number_of_errors_happen_so_far[] = 1
     if !multiple_obs
-        cz = div(fs-skip_bytes, nt)
-        lo = [(i-1)*cz+skip_bytes+1 for i in 1:nt]
-        hi = [i*cz+skip_bytes for i in 1:nt]
-        hi[end] = fs
-        # lo[1] += skip_bytes
-        cur_value = Vector{UInt8}(undef, eol_len)
-        for i in 1:length(hi)-1
-            seek(f, hi[i] - eol_len)
-            for k in 1:eol_len
-                cur_value[k] = read(f, UInt8)
-            end
-            if last(cur_value) != eol_last || first(cur_value) != eol_first
-                while true
-                    if eol_len == 2
-                        seek(f, position(f) - 1)
-                    end
-                    read!(f, cur_value)
-                    last(cur_value) == eol_last && first(cur_value) == eol_first && break
-                end
-                hi[i] = position(f)
-                lo[i+1] = hi[i] + 1
-            end
+        line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, fs, skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
+
+        # revised calculation - if limit is set
+        if nt > 1 && last_chunk_to_read < nt
+            line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, hi[last_chunk_to_read], skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
         end
 
-        ns = fill(1, nt)
-        if nt > 1
-            Threads.@threads for i in 1:nt
-                ns[i] = count_lines_of_file(path, lo[i], hi[i], eol)
-            end
-        else
-            for i in 1:nt
-                ns[i] = count_lines_of_file(path, lo[i], hi[i], eol; limit = limit)
-            end
-        end
-
-        line_hi = cumsum(ns)
-        if issorted(line_hi)
-            last_chunk_to_read = searchsortedfirst(line_hi, limit)
-        else
-            throw(ArgumentError("The current buffer size and line size are too small increase them by setting `lsize` and `buffsize`"))
-        end
         res = Any[allocatecol_for_res(types[i], min(sum(ns), limit)) for i in 1:length(types)]
-
-        line_lo = [1; line_hi[1:end] .+ 1]
+        
         CLOSE(f)
+        
         if nt > 1
             Threads.@threads for i in 1:min(nt, last_chunk_to_read)
                 line_lo[i]>line_hi[i] && continue
@@ -573,7 +538,7 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
 end
 
 
-function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Informat}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = LINEINFORMAT_DEFAULT)
+function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = LINEINFORMAT_DEFAULT)
 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
@@ -744,9 +709,26 @@ Read a delimited file into `Julia`.
 * `eolwarn`: Control if the end-of-line character warning should be shown.
 * `threads`: For large files, the `filereader` function exploits all threads. However, this can be switch off by setting this argument as `false`.
 """
-function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat::Dict{Int, <:Informats} = Dict{Int, Informat}(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat::Informats = LINEINFORMAT_DEFAULT)::Dataset
+function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat = Dict(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
     
-    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1, UInt8},  Characters{2, UInt8}, Characters{3, UInt8}, Characters{4, UInt8}, Characters{5, UInt8}, Characters{6, UInt8}, Characters{7, UInt8}, Characters{8, UInt8}, Characters{9, UInt8}, Characters{10, UInt8}, Characters{11, UInt8}, Characters{12, UInt8}, Characters{13, UInt8}, Characters{14, UInt8}, Characters{15, UInt8}, Characters{16, UInt8},  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
+    infmt = Dict{Int, Symbol}()
+    if !isempty(informat)
+        for (k,v) in informat
+            if v isa ComposedFunction
+                if haskey(DLMReader_Registered_Informats, Symbol(NAMEOF(v)))
+                    push!(infmt, k => Symbol(NAMEOF(v)))
+                else
+                    register_informat(v, NAMEOF(v), quiet = true)
+                    push!(infmt, k => Symbol(NAMEOF(v)))
+                end
+            else
+                push!(infmt, k => Symbol(nameof(v)))
+            end
+        end
+    end
+
+
+    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255,  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
     
     lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
     ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
@@ -770,7 +752,7 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     end
 
     if types === nothing || types isa Dict
-        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, eolwarn = false, ignorerepeated = ignorerepeated, skipto = skipto, line_informat = line_informat)
+        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, eolwarn = false, ignorerepeated = ignorerepeated, skipto = skipto, line_informat = line_informat)
         if types isa Dict
             for (k, v) in types
                 intypes[k] = v
@@ -811,5 +793,5 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
         end
     end
 
-    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, skipto = skipto, limit = limit, line_informat = line_informat)
+    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, skipto = skipto, limit = limit, line_informat = line_informat)
 end
