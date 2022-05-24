@@ -715,12 +715,8 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     if !isempty(informat)
         for (k,v) in informat
             if v isa ComposedFunction
-                if haskey(DLMReader_Registered_Informats, Symbol(NAMEOF(v)))
-                    push!(infmt, k => Symbol(NAMEOF(v)))
-                else
-                    register_informat(v, NAMEOF(v), quiet = true)
-                    push!(infmt, k => Symbol(NAMEOF(v)))
-                end
+                register_informat(v, NAMEOF(v), quiet = true)
+                push!(infmt, k => Symbol(NAMEOF(v)))
             else
                 push!(infmt, k => Symbol(nameof(v)))
             end
