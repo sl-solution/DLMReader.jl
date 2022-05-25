@@ -108,7 +108,6 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         end
         flag
 end
-using InteractiveUtils
 function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
