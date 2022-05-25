@@ -4,10 +4,12 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         cc = lo
         en = hi
         if !isempty(informat)
-            infmt = get(informat, j, :identity)
-            if infmt !== :identity
-                informat_fun_ptr = get_informat_ptr(DLMReader_Registered_Informats, infmt)
-                (new_lo, new_hi) = ccall(informat_fun_ptr, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, lo, hi)
+            if haskey(informat, j)
+                new_lo = lo
+                new_hi = hi
+                for ptrs in informat[j]
+                    (new_lo, new_hi) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, new_lo, new_hi)
+                end
                 _newsub_ = SUBSTRING(buffer, new_lo, new_hi)
                 cc = (_newsub_.lo)::Int
                 en = (_newsub_.hi)::Int
@@ -106,6 +108,7 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
         end
         flag
 end
+using InteractiveUtils
 function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
     n_cols = length(types)
     line_start = 1
@@ -717,15 +720,10 @@ Read a delimited file into `Julia`.
 """
 function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat = Dict(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
     
-    infmt = Dict{Int, Symbol}()
+    infmt = Dict{Int, Vector{Ptr{Nothing}}}()
     if !isempty(informat)
         for (k,v) in informat
-            if v isa ComposedFunction
-                register_informat(v, NAMEOF(v), quiet = true)
-                push!(infmt, k => Symbol(NAMEOF(v)))
-            else
-                push!(infmt, k => Symbol(nameof(v)))
-            end
+           push!(infmt , k => _get_ptr_informat!(Ptr{Nothing}[], DLMReader_Registered_Informats, v))
         end
     end
 

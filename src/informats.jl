@@ -1,27 +1,39 @@
 global DLMReader_Registered_Informats = Dict{Symbol, Ptr{Nothing}}()
 
-NAMEOF(f::ComposedFunction) = NAMEOF(f.outer) * "_" * NAMEOF(f.inner)
-NAMEOF(f) = string(nameof(f))
 
-function register_informat(f, NAME = NAMEOF(f); quiet = false)
+function register_informat(f; quiet = false)
     @assert Core.Compiler.return_type(f, Tuple{SUBSTRING}) == SUBSTRING "informat must return its input or a subset of its input"
     
     f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(f)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
     flag = false
-    if haskey(DLMReader_Registered_Informats, Symbol(NAME))
+    if haskey(DLMReader_Registered_Informats, Symbol(nameof(f)))
         flag = true
     end
-    push!(DLMReader_Registered_Informats, Symbol(NAME) => f_ptr)
+    push!(DLMReader_Registered_Informats, Symbol(nameof(f)) => f_ptr)
     if flag
-        @warn "Informat $(NAME) has been overridden"
+        @warn "Informat $(nameof(f)) has been overridden"
     end
     if !quiet
-        @info "Informat $(NAME) has been registered"
+        @info "Informat $(nameof(f)) has been registered"
     end
     nothing
 end
 
-register_informat(f::ComposedFunction, NAME = NAMEOF(f); quiet = false) = register_informat(x->f.outer(f.inner(x)), NAME, quiet = quiet)
+function _get_ptr_informat!(out::Vector{Ptr{Nothing}}, d, f)
+    id = Symbol(f)
+    if haskey(d, id)
+        push!(out, d[id])
+    else
+        throw(ArgumentError("informat $id is not defined"))
+    end
+    out
+end
+function _get_ptr_informat!(out::Vector{Ptr{Nothing}}, d, f::ComposedFunction)
+    _get_ptr_informat!(out, d, f.inner)
+    _get_ptr_informat!(out, d, f.outer)
+end
+
+
 
 ### line informat - informat that is applied to whole line before passing it for parsing
 _lineinfmt_default(x) = x

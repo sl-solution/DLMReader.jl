@@ -98,7 +98,7 @@ function Base.replace!(s::SUBSTRING, rp::Pair{String, String}; count::Integer = 
     s
 end
 
-function Base.occursin(o::String, s::SUBSTRING)
+function Base.occursin(o::String, s::SUBSTRING)::Bool
     length(s) < ncodeunits(o) && return false
     o_c = codeunits(o)
     o_c_l = length(o_c)
