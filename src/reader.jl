@@ -390,9 +390,10 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                 else
                     last_valid_buff = cnt_read_bytes
                 end
+            # if we read more than what is allowed for the current chunk, we should revise the last_valid_buff   
             else cur_position > hi
                 last_line = true
-                last_valid_buff = buffsize - (cur_position - hi + 1)
+                last_valid_buff = cnt_read_bytes - (cur_position - hi)
             end
             if multiple_obs
                 read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)

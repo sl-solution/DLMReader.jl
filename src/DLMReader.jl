@@ -17,7 +17,12 @@ export
     BOOL!, # treats true false as 1 0
     STRIP!, # removes leading and trailing blanks
     ACC!,  # treats (numbers) as negative
-    COMPRESS! # compresses blanks
+    COMPRESS!, # compresses blanks
+
+    #manipulating text
+    remove!
+
+
 
 include("linebuffer.jl")
 include("util.jl")

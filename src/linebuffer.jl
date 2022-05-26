@@ -61,9 +61,7 @@ function Base.setindex!(s::SUBSTRING, x::String)
         s.string.data[s.lo:s.hi] .= codeunits(x)
     elseif length(s) > ncodeunits(x)
         s.string.data[s.lo:s.lo+ncodeunits(x)-1] .= codeunits(x)
-        for i in s.lo+ncodeunits(x):s.hi
-            s.string.data[i] = 0x20
-        end
+        fill!(view(s.string.data, s.lo+ncodeunits(x):s.hi), 0x20)
     else
         s.string.data[s.lo:s.hi] .= view(codeunits(x), 1:length(s))
     end
@@ -123,20 +121,43 @@ function remove!(s::SUBSTRING, o::String)
     o_c_l = length(o_c)
     lo = s.lo
     hi = s.hi
-    i = hi
-    idx = hi
+    i = lo
+    idx = lo
     while true
-        if isequal(_SUBSTRING_(s.string, i-o_c_l+1:i), o)
-            i -= o_c_l
+        if isequal(_SUBSTRING_(s.string, i:i+o_c_l-1), o)
+            i += o_c_l
         else
             s.string.data[idx] = s.string.data[i]
-            idx -= 1
-            i -= 1
+            idx += 1
+            i += 1
         end
-        i < lo+o_c_l-1 && break
+        if i > hi-o_c_l+1
+            copyto!(s.string.data, idx, s.string.data, i, hi - i + 1)
+            idx += hi - i + 1
+            break
+        end
     end
-    _SUBSTRING_(s.string, idx+1:hi)
+    fill!(view(s.string.data, idx:hi), 0x20)
+    _SUBSTRING_(s.string, lo:idx-1)
 end
+
+function remove!(s::SUBSTRING, o::UnitRange{<:Integer})
+    (o.start < 1 || o.stop > length(s)) && throw(BoundsError())
+    isempty(o) && return s
+    lo = s.lo
+    hi = s.hi
+    i = lo
+    idx = lo
+    copyto!(s.string.data, lo, s.string.data, lo, o.start-1)
+    idx += o.start-1
+    copyto!(s.string.data, idx, s.string.data, lo+o.stop, hi-(lo+o.stop)+1)
+    idx += hi-(lo+o.stop)+1
+    fill!(view(s.string.data, idx:hi), 0x20)
+    _SUBSTRING_(s.string, lo:idx-1)
+end
+
+Base.findnext(re::Regex, str::SUBSTRING, idx::Integer) = Base._findnext_re(re, str, idx, C_NULL)
+Base.findfirst(re::Regex, str::SUBSTRING) = findnext(re, str, firstindex(str))
 
 function Base.getindex(s::LineBuffer, r::UnitRange{<:Integer})
     #use default checkbounds
@@ -157,7 +178,7 @@ Base.ncodeunits(s::SUBSTRING) = length(s)
 
 Base.isvalid(s::SUBSTRING, i::Int) = _checkbounds_(s, i)
 
-# TODO: avoid allocation in occursin with Regex - probably needs more work
+# TODO: needs more work - for non-ascii characters
 function Base.occursin(r::Regex, s::SUBSTRING; offset::Integer=0)
     Base.compile(r)
     return Base.PCRE.exec_r(r.regex, s, offset, r.match_options)
@@ -170,6 +191,29 @@ function Base.PCRE.exec(re, subject::SUBSTRING, offset, options, match_data)
     # rc == -1 means no match, -2 means partial match.
     rc < -2 && error("PCRE.exec error: $(err_message(rc))")
     return rc >= 0
+end
+
+function Base._findnext_re(re::Regex, str::SUBSTRING, idx::Integer, match_data::Ptr{Cvoid})
+    if idx > length(str)
+        throw(BoundsError())
+    end
+    opts = re.match_options
+    Base.compile(re)
+    alloc = match_data == C_NULL
+    if alloc
+        matched, data = Base.PCRE.exec_r_data(re.regex, str, idx-1, opts)
+    else
+        matched = Base.PCRE.exec(re.regex, str, idx-1, opts, match_data)
+        data = match_data
+    end
+    if matched
+        p = Base.PCRE.ovec_ptr(data)
+        ans = (Int(unsafe_load(p,1))+1):prevind(str,Int(unsafe_load(p,2))+1)
+    else
+        ans = nothing
+    end
+    alloc && Base.PCRE.free_match_data(data)
+    return ans
 end
 
 # minimum type definition for parsing TimeType data
