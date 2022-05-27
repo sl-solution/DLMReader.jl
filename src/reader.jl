@@ -15,100 +15,100 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
                 en = (_newsub_.hi)::Int
             end
         end
-        @inbounds if types[j] <: Int64
+        @inbounds if types[j] === Int64
            flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: Float64
+        elseif types[j] === Float64
            flag = buff_parser(res[j]::Vector{Union{Missing, Float64}}, buffer.data, cc, en, current_line, Float64)
-        elseif types[j] <: Bool
+        elseif types[j] === Bool
             flag = buff_parser(res[j]::Vector{Union{Missing, Bool}}, buffer, cc, en, current_line, Bool)
-        elseif types[j] <: Date
+        elseif types[j] === Date
             flag = buff_parser(res[j]::Vector{Union{Missing, Date}}, buffer, cc, en, current_line, df[dt_cnt], Date)
-        elseif types[j] <: DateTime
+        elseif types[j] === DateTime
             flag = buff_parser(res[j]::Vector{Union{Missing, DateTime}}, buffer, cc, en, current_line, df[dt_cnt], DateTime)
-        elseif types[j] <: String
+        elseif types[j] === String
             if string_trim
                 flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, string_trim, String)
             else
                 flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, String)
             end
-        elseif types[j] <: Int32
+        elseif types[j] === Int32
             flag = buff_parser(res[j]::Vector{Union{Missing, Int32}}, buffer, cc, en, current_line, Int32; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: Float32
+        elseif types[j] === Float32
             flag = buff_parser(res[j]::Vector{Union{Missing, Float32}}, buffer.data, cc, en, current_line, Float32)
-        elseif types[j] <: Int8
+        elseif types[j] === Int8
             flag = buff_parser(res[j]::Vector{Union{Missing, Int8}}, buffer, cc, en, current_line, Int8; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: Int16
+        elseif types[j] === Int16
             flag = buff_parser(res[j]::Vector{Union{Missing, Int16}}, buffer, cc, en, current_line, Int16; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: String1
+        elseif types[j] === String1
             flag = buff_parser(res[j]::Vector{Union{Missing,String1}}, buffer.data, cc, en, current_line,String1)
-        elseif types[j] <: String3
+        elseif types[j] === String3
             flag = buff_parser(res[j]::Vector{Union{Missing,String3}}, buffer.data, cc, en, current_line,String3)
-        elseif types[j] <: String7
+        elseif types[j] === String7
             flag = buff_parser(res[j]::Vector{Union{Missing,String7}}, buffer.data, cc, en, current_line,String7)
-        elseif types[j] <: String15
+        elseif types[j] === String15
             flag = buff_parser(res[j]::Vector{Union{Missing,String15}}, buffer.data, cc, en, current_line,String15)
-        elseif types[j] <: Characters{3}
+        elseif types[j] === Characters{3}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{3}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{3})
-        elseif types[j] <: Characters{5}
+        elseif types[j] === Characters{5}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{5}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{5})
-        elseif types[j] <: Characters{8}
+        elseif types[j] === Characters{8}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{8}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{8})
-        elseif types[j] <: Characters{10}
+        elseif types[j] === Characters{10}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{10}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{10})
-        elseif types[j] <: Characters{11}
+        elseif types[j] === Characters{11}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{11}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{11})
-        elseif types[j] <: Characters{12}
+        elseif types[j] === Characters{12}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{12}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{12})
-        elseif types[j] <: Characters{13}
+        elseif types[j] === Characters{13}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{13}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{13})
-        elseif types[j] <: Characters{14}
+        elseif types[j] === Characters{14}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{14}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{14})
-        elseif types[j] <: Characters{15}
+        elseif types[j] === Characters{15}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{15}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{15})
-        elseif types[j] <: Characters{1}
+        elseif types[j] === Characters{1}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{1}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{1})
-        elseif types[j] <: Characters{2}
+        elseif types[j] === Characters{2}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{2}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{2})
-        elseif types[j] <: Characters{4}
+        elseif types[j] === Characters{4}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{4}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{4})
-        elseif types[j] <: Characters{6}
+        elseif types[j] === Characters{6}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{6}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{6})
-        elseif types[j] <: Characters{7}
+        elseif types[j] === Characters{7}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{7}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{7})
-        elseif types[j] <: Characters{9}
+        elseif types[j] === Characters{9}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{9}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{9})
-        elseif types[j] <: Characters{16}
+        elseif types[j] === Characters{16}
             flag = buff_parser(res[j]::Vector{Union{Missing,Characters{16}}}, buffer.data, cc, en, current_line, char_buff[char_cnt]::Vector{UInt8}, Characters{16})
-        elseif types[j] <: Time
+        elseif types[j] === Time
             flag = buff_parser(res[j]::Vector{Union{Missing, Time}}, buffer, cc, en, current_line, df[dt_cnt], Time)
-        elseif types[j] <: String31
+        elseif types[j] === String31
             flag = buff_parser(res[j]::Vector{Union{Missing,String31}}, buffer.data, cc, en, current_line,String31)
-        elseif types[j] <: String63
+        elseif types[j] === String63
             flag = buff_parser(res[j]::Vector{Union{Missing,String63}}, buffer.data, cc, en, current_line,String63)
-        elseif types[j] <: String127
+        elseif types[j] === String127
             flag = buff_parser(res[j]::Vector{Union{Missing,String127}}, buffer.data, cc, en, current_line,String127)
-        elseif types[j] <: String255
+        elseif types[j] === String255
             flag = buff_parser(res[j]::Vector{Union{Missing,String255}}, buffer.data, cc, en, current_line,String255)
-        elseif types[j] <: UInt8
+        elseif types[j] === UInt8
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt8}}, buffer, cc, en, current_line, UInt8; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: UInt16
+        elseif types[j] === UInt16
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt16}}, buffer, cc, en, current_line, UInt16; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: UInt32
+        elseif types[j] === UInt32
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt32}}, buffer, cc, en, current_line, UInt32; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: UInt64
+        elseif types[j] === UInt64
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt64}}, buffer, cc, en, current_line, UInt64; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: Int128
+        elseif types[j] === Int128
             flag = buff_parser(res[j]::Vector{Union{Missing, Int128}}, buffer, cc, en, current_line, Int128; base = int_bases === nothing ? 10 : int_bases[int_cnt])
-        elseif types[j] <: BigFloat
+        elseif types[j] === BigFloat
             flag = buff_parser(res[j]::Vector{Union{Missing, BigFloat}}, buffer, cc, en, current_line, BigFloat)
-        elseif types[j] <: UUID
+        elseif types[j] === UUID
             flag = buff_parser(res[j]::Vector{Union{Missing, UUID}}, buffer, cc, en, current_line, UUID)
         else # others are string
             flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line, String)
         end
         flag
 end
-function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped)
+function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat!, track_problems, total_line_skipped, Characters_types, TimeType_types, Integer_types)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -136,11 +136,11 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
         field_start = line_start
         any_problem_with_parsing = 0
         for j in 1:n_cols
-            if types[j] <: Characters
+            if insorted(j, Characters_types)
                 char_cnt += 1
-            elseif types[j] <: TimeType
+            elseif insorted(j, TimeType_types)
                 dt_cnt += 1
-            elseif types[j] <: Integer
+            elseif insorted(j, Integer_types)
                 int_cnt += 1
             end
             # if there is no fixed width information for the current column
@@ -235,7 +235,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
 end
 
 # different function for reading multiple observations per line - the main difference is: here we push one observation at a time
-function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
+function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped, Characters_types, TimeType_types, Integer_types)
     n_cols = length(types)
     line_start = 1
     current_cursor_position = 1
@@ -259,11 +259,11 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
         int_cnt = 0
 
         
-        if types[j] <: Characters
+        if insorted(j, Characters_types)
             char_cnt += 1
-        elseif types[j] <: TimeType
+        elseif insorted(j, TimeType_types)
             dt_cnt += 1
-        elseif types[j] <: Integer
+        elseif insorted(j, Integer_types)
             int_cnt += 1
         end
 
@@ -330,6 +330,12 @@ end
 function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = nothing, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
+
+    Characters_types = findall(x->x <: Characters, types)
+    TimeType_types = findall(x->x <: TimeType, types)
+    Integer_types = findall(x->x <: Integer, types)
+
+
     try
         if dlmstr === nothing
             dlm = UInt8.(delimiter)
@@ -403,9 +409,9 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
                 last_valid_buff = cnt_read_bytes - (cur_position - hi)
             end
             if multiple_obs
-                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped)
+                read_one_obs = _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems, total_line_skipped, Characters_types, TimeType_types, Integer_types)
             else
-                _process_iobuff!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems, total_line_skipped)
+                _process_iobuff!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems, total_line_skipped, Characters_types, TimeType_types, Integer_types)
             end
                 # we need to break at some point
             current_line[] > limit && break
