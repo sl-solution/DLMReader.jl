@@ -33,7 +33,10 @@ function _get_ptr_informat!(out::Vector{Ptr{Nothing}}, d, f::ComposedFunction)
     _get_ptr_informat!(out, d, f.outer)
 end
 
-
+# help users debug informats
+function test(f, s::String)
+    f(SUBSTRING(LineBuffer(collect(codeunits(s))), 1, ncodeunits(s)))
+end
 
 ### line informat - informat that is applied to whole line before passing it for parsing
 # This file contains some popular informats

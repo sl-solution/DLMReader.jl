@@ -155,6 +155,7 @@ function remove!(s::SUBSTRING, o::UnitRange{<:Integer})
     fill!(view(s.string.data, idx:hi), 0x20)
     _SUBSTRING_(s.string, lo:idx-1)
 end
+remove!(s::SUBSTRING, ::Nothing) = s
 
 Base.findnext(re::Regex, str::SUBSTRING, idx::Integer) = Base._findnext_re(re, str, idx, C_NULL)
 Base.findfirst(re::Regex, str::SUBSTRING) = findnext(re, str, firstindex(str))
