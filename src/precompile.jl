@@ -1,15 +1,8 @@
 function warmup()
-   __na_warmup(x) = NA!(x)
-   __strip_warmup(x) = STRIP!(x)
-   register_informat(__na_warmup, quiet = true)
-   register_informat(__strip_warmup, quiet = true)
 
    dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
    ds = filereader(joinpath(dir, "repeat1.csv"), ignorerepeated = true, header = true, quotechar = '"', delimiter = '\t')
-   ds = filereader(IOBuffer("""x1,x2
-      12,13
-      1,2
-      """), types = [Int, Float64], header = true, informat = Dict(1:2 .=> __na_warmup))
+  
    ds = filereader(IOBuffer("""x1;x2
       12;13
       1;2
@@ -44,10 +37,7 @@ function warmup()
       100,100
       101,101
       """), int_base = Dict(1 => (Int, 2)))
-   ds = filereader(IOBuffer("""x1,x2
-      NA,12
-      1,NA
-      """), informat = Dict(1:2 .=> __na_warmup))
+  
    ds = filereader(IOBuffer("""COL1, COL2
       1,2
       2,3
@@ -65,10 +55,7 @@ function warmup()
       "    fdh  ",df
       "dkhfd    ",dfadf
       """), quotechar = '"', string_trim = true)
-   ds = filereader(IOBuffer("""x1,x2,x3
-      1,   2020-2-2   , " ff  "
-      2,2020-1-1,"343"
-      """), types = Dict(2 => Date), quotechar = '"', informat = Dict(2:3 .=> __strip_warmup))
+  
    ds = filereader(IOBuffer("""x,x
       1,2
       """), makeunique = true)
@@ -91,7 +78,6 @@ function warmup()
    8   R   F   21   2    25
    9   R   F   21   2    25
    """), delimiter = ' ', ignorerepeated = true, emptycolname = true)
-   delete!(DLMReader_Registered_Informats, __na_warmup)
-   delete!(DLMReader_Registered_Informats, __strip_warmup)
+   
    nothing
 end
