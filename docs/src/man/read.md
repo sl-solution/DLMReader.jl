@@ -309,7 +309,7 @@ julia> ds = filereader(IOBuffer("""COL1, COL2
 
 ### `multiple_obs`
 
-If it is set as `true`, the `filereader` function assumes there are more than one observation in each line of the input file.
+If it is set as `true`, the `filereader` function assumes there may be more than one observation in each line of the input file.
 
 **Default:** `false`
 

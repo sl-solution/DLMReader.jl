@@ -36,8 +36,6 @@ end
 
 
 ### line informat - informat that is applied to whole line before passing it for parsing
-_lineinfmt_default(x) = x
-LINEINFORMAT_DEFAULT(x) = x
 # This file contains some popular informats
 
 Base.@propagate_inbounds function STRIP!(x)

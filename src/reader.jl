@@ -126,10 +126,13 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
         dt_cnt = 0
         int_cnt = 0
 
-       line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
-       _newline_ = line_informat!(_SUBSTRING_(buffer, line_start:line_end))
-        line_start = _newline_.lo
-        line_end = _newline_.hi
+        line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
+       
+        if line_informat! !== nothing
+            for ptrs in line_informat!
+                (line_start, line_end) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, line_start, line_end)
+            end
+        end
         field_start = line_start
         any_problem_with_parsing = 0
         for j in 1:n_cols
@@ -152,6 +155,7 @@ function _process_iobuff!(res, buffer, types, dlm, eol,  current_line, last_vali
                 end
                 # we should have a strategy for this kind of problems, for now just let the end of line as endpoint                
                 if dlm_pos == 0
+                    # line_end + dlm_length : since later we use dlm_pos+1 for next field
                     dlm_pos = line_end + dlm_length
                     if j < n_cols
                         if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
@@ -246,14 +250,15 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
     j = 1
     field_start = 1
     read_one_obs = false
+    
+    line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
     while true
-
         # keep track of Characters and DateTime columns
         char_cnt = 0
         dt_cnt = 0
         int_cnt = 0
 
-        line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
+        
         if types[j] <: Characters
             char_cnt += 1
         elseif types[j] <: TimeType
@@ -289,7 +294,8 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
         if j == n_cols && any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if colnames !== nothing
-                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, current_line[]+total_line_skipped).message
+                    # since each observation may spread in multiple lines, we cannot determine the line number where problem happened
+                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems, "UNKNOWN").message
                 end
             end
             # reset track_problems
@@ -312,6 +318,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
         if dlm_pos > line_end
             line_start = line_end + length(eol) + 1
             field_start = line_start
+            line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
         end
         line_start > last_valid_buff && break
     end
@@ -320,7 +327,7 @@ end
 
 
 # lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
-function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT, total_line_skipped = 0)
+function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = nothing, string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = nothing, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
     try
@@ -416,7 +423,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
 end
 
 # main distributer
-function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset 
+function distribute_file(path, types; delimiter = ',', linebreak = '\n', header = true, threads = true, guessingrows = 20, fixed = 0:0, buffsize = 2^16, dtformat = dateformat"yyyy-mm-dd", lsize = 2^15, dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, emptycolname = false, int_bases = nothing, string_trim = false, makeunique = false, ignorerepeated = false, multiple_obs = false, skipto = 1, limit = typemax(Int), line_informat = nothing)::Dataset 
 
     eol = UInt8.(linebreak)
     eol_first = first(eol)
@@ -539,15 +546,14 @@ function distribute_file(path, types; delimiter = ',', linebreak = '\n', header 
         end
     else
         res = Any[allocatecol_for_res(types[i], 1) for i in 1:length(types)]
-        lo = 0
-        readfile_chunk!(res, 1, 1, charbuff[1], path, types, 1, 1, FILESIZE(path), colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, multiple_obs = true, limit = limit, total_line_skipped = total_line_skipped)
+        readfile_chunk!(res, 1, 1, charbuff[1], path, types, 1, f_pos+1, FILESIZE(path), colnames; delimiter = delimiter, linebreak = linebreak, lsize = lsize, buffsize = buffsize, fixed = colwidth, df = dtfmt, dlmstr = dlmstr, informat = informat, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, int_bases = int_bases, string_trim = string_trim, ignorerepeated = ignorerepeated, multiple_obs = true, limit = limit, total_line_skipped = total_line_skipped)
     end
 
     Dataset(res, colnames, copycols = false, makeunique = makeunique)
 end
 
 
-function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = LINEINFORMAT_DEFAULT)
+function guess_structure_of_delimited_file(path, delimiter; linebreak = nothing , header = true, guessingrows = 20, fixed = 0:0, dtformat = nothing, dlmstr = nothing, lsize = 2^15, buffsize = 2^16, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, eolwarn = false, ignorerepeated = false, skipto = 1, line_informat = nothing)
 
     if linebreak === nothing
         linebreak = (guess_eol_char(path))
@@ -718,7 +724,7 @@ Read a delimited file into `Julia`.
 * `eolwarn`: Control if the end-of-line character warning should be shown.
 * `threads`: For large files, the `filereader` function exploits all threads. However, this can be switch off by setting this argument as `false`.
 """
-function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat = Dict(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = LINEINFORMAT_DEFAULT)::Dataset
+function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat = Dict(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Tuple{DataType, Int}} = Dict{Int, Tuple{DataType, Int}}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = nothing)::Dataset
     
     infmt = Dict{Int, Vector{Ptr{Nothing}}}()
     if !isempty(informat)
@@ -727,16 +733,22 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
         end
     end
 
+    if line_informat === nothing
+        l_infmt = nothing
+    else
+        l_infmt = _get_ptr_informat!(Ptr{Nothing}[], DLMReader_Registered_Informats, line_informat)
+    end
+
 
     supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255,  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
     
-    lsize > buffsize && throw(ArgumentError("`lsize` must not be larger than `buffsize`"))
+    lsize > buffsize && throw(ArgumentError("`lsize` cannot be larger than `buffsize`"))
     ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
 
     guessingrows = min(guessingrows, limit)
 
     number_of_errors_happen_so_far[] = 0
-
+    
     if quotechar !== nothing
         quotechar = UInt8(quotechar)
         if escapechar !== nothing
@@ -748,11 +760,11 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
 
     if multiple_obs
         !(types isa AbstractVector) && throw(ArgumentError("For reading multiple observations per line the types of each column must be specified"))
-        fixed != 0:0 && throw(ArgumentError("When multiple observations per line is `true` the `fixed` keyword argument cannot be set"))
+        fixed != 0:0 && throw(ArgumentError("When multiple observations per line is `true` the `fixed` keyword argument cannot be used"))
     end
 
     if types === nothing || types isa Dict
-        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, eolwarn = false, ignorerepeated = ignorerepeated, skipto = skipto, line_informat = line_informat)
+        linebreak, intypes = guess_structure_of_delimited_file(path, delimiter; linebreak = linebreak, header = header, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, eolwarn = false, ignorerepeated = ignorerepeated, skipto = skipto, line_informat = l_infmt)
         if types isa Dict
             for (k, v) in types
                 intypes[k] = v
@@ -788,10 +800,10 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
         if header == true
             throw(ArgumentError("`filereader` doesn't support reading header from file when `multiple_obs = true`"))
         end
-        if skipto != 1
-            throw(ArgumentError("`filereader` doesn't support `skipto` option when `multiple_obs = true`"))
+        if line_informat !== nothing
+            throw(ArgumentError("`filereader` doesn't support `line_informat` when `multiple_obs = true`"))
         end
     end
 
-    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, skipto = skipto, limit = limit, line_informat = line_informat)
+    distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_bases, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, skipto = skipto, limit = limit, line_informat = l_infmt)
 end
