@@ -136,9 +136,9 @@ Base.@propagate_inbounds function BOOL!(x)
     lo = _newsub_.lo
     hi = _newsub_.hi
     if length(lo:hi) == 1
-        if x.string.data[lo] in (0x54, 0x74, 0x31)
+        if x.string.data[lo] in (0x54, 0x74)
             x.string.data[lo] = 0x31
-        elseif x.string.data[lo] in (0x46, 0x66, 0x30)
+        elseif x.string.data[lo] in (0x46, 0x66)
             x.string.data[lo] = 0x30
         end
     elseif length(lo:hi) == 4

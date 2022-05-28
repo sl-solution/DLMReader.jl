@@ -40,6 +40,7 @@ function __init__()
     register_informat(COMMAX!; quiet = true)
     register_informat(STRIP!; quiet = true)
     register_informat(ACC!; quiet = true)
-    register_informat(COMPRESS!; quiet = true)   
+    register_informat(COMPRESS!; quiet = true)
+    register_informat(BOOL!; quiet = true)   
 end
 end
