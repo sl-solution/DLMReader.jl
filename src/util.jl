@@ -552,7 +552,7 @@ function _generate_colname_based(path, eol, lo, hi, lsize, types, delimiter, lin
                 varnames[i] = "NONAME"*string(cnter)
                 cnter += 1
             else
-                throw(ArgumentError("the column name inference is not valid, setting `header = false` or `emptycolname = true` may solve the issue."))
+                throw(ArgumentError("the column name inference is not valid, if the table is very wide, increase `buffsize` and `lsize`, otherwise, setting `header = false` or `emptycolname = true` may solve the issue."))
             end
         else
             varnames[i] = _varnames[i][1]

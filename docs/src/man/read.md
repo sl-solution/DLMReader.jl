@@ -228,7 +228,7 @@ julia> ds = filereader(IOBuffer("""date1,date2
 
 ### `int_base`
 
-The `filereader` can read integers with different bases. User can pass this information for a specific column. The value of bases must be passed as a dictionary, e.g. `Dict(1 => (Int32, 2))`.
+The `filereader` can read integers with with given base. User can pass this information for a specific column.
 
 **Default:** `nothing`
 
@@ -236,7 +236,7 @@ The `filereader` can read integers with different bases. User can pass this info
 julia> ds = filereader(IOBuffer("""x1,x2
        100,100
        101,101
-       """), int_base = Dict(1 => (Int, 2)))
+       """), int_base = Dict(1 => 2))
 2×2 Dataset
  Row │ x1        x2       
      │ identity  identity 

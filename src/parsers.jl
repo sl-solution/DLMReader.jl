@@ -7,7 +7,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, df, ::Type{T}) where  T <
     end
 
     if val === nothing
-        @simd for i in cc:nd
+        for i in cc:nd
             @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
                 flag = 1
 
@@ -30,7 +30,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}; base = 10) whe
     val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = 0
     if val === nothing
-        @simd for i in cc:nd
+        for i in cc:nd
             @inbounds if (lbuff.data[i] != 0x20 && lbuff.data[i] != 0x2e)
                 flag = 1
 
@@ -49,7 +49,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Rea
     if hasvalue
         res[current_line[]] = val
     else
-        @simd for i in cc:nd
+        for i in cc:nd
             @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
                 flag = 1
 
@@ -66,7 +66,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
     if hasvalue
         res[current_line[]] = val
     else
-        @simd for i in cc:nd
+        for i in cc:nd
             @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
                 flag = 1
 
@@ -191,7 +191,7 @@ function buff_parser(res, buffer, cc, nd, current_line, ::Type{T}) where T <: UU
     else
         val = Base.tryparse(UUID, view(buffer, cc:nd))
         if val === nothing
-            @simd for i in cc:nd
+            for i in cc:nd
                 @inbounds if (buffer.data[i] != 0x20 && buffer.data[i] != 0x2e)
                     flag = 1
                 end
