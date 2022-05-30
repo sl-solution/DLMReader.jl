@@ -41,6 +41,8 @@ It works very well for huge files (long or/and wide).
 
 ## Benchmarks
 
+See [here](https://discourse.julialang.org/t/ann-dlmreader-the-most-versatile-julia-package-for-reading-delimited-files-yet/81899) for some benchmarks.
+
 ## Examples
 
 The following files will be used during the examples, it is assumed that the files are located in the current working directory
