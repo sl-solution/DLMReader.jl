@@ -65,6 +65,104 @@ function allocatecol_for_res(T, s)
     InMemoryDatasets._missings(T, s)
 end
 
+function  _our_resize!(x, n)
+    resize!(x, n)
+    fill!(x, missing)    
+end
+
+# it significantly improve the performance for very wide tables
+function _resize_res_barrier!(res, types, n, threads)
+    InMemoryDatasets.@_threadsfor threads for j in 1:length(res)
+        @inbounds if types[j] === Int64
+            _our_resize!(res[j]::Vector{Union{Missing, Int64}}, n)
+        elseif types[j] === Float64
+            _our_resize!(res[j]::Vector{Union{Missing, Float64}}, n)
+        elseif types[j] === Bool
+            _our_resize!(res[j]::Vector{Union{Missing, Bool}}, n)
+        elseif types[j] === Date
+            _our_resize!(res[j]::Vector{Union{Missing, Date}}, n)
+        elseif types[j] === DateTime
+            _our_resize!(res[j]::Vector{Union{Missing, DateTime}}, n)
+        elseif types[j] === String
+            _our_resize!(res[j]::Vector{Union{Missing, String}}, n)
+        elseif types[j] === Int32
+            _our_resize!(res[j]::Vector{Union{Missing, Int32}}, n)
+        elseif types[j] === Float32
+            _our_resize!(res[j]::Vector{Union{Missing, Float32}}, n)
+        elseif types[j] === Int8
+            _our_resize!(res[j]::Vector{Union{Missing, Int8}}, n)
+        elseif types[j] === Int16
+            _our_resize!(res[j]::Vector{Union{Missing, Int16}}, n)
+        elseif types[j] === String1
+            _our_resize!(res[j]::Vector{Union{Missing,String1}}, n)
+        elseif types[j] === String3
+            _our_resize!(res[j]::Vector{Union{Missing,String3}}, n)
+        elseif types[j] === String7
+            _our_resize!(res[j]::Vector{Union{Missing,String7}}, n)
+        elseif types[j] === String15
+            _our_resize!(res[j]::Vector{Union{Missing,String15}}, n)
+        elseif types[j] === Characters{3}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{3}}}, n)
+        elseif types[j] === Characters{5}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{5}}}, n)
+        elseif types[j] === Characters{8}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{8}}}, n)
+        elseif types[j] === Characters{10}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{10}}}, n)
+        elseif types[j] === Characters{11}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{11}}}, n)
+        elseif types[j] === Characters{12}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{12}}}, n)
+        elseif types[j] === Characters{13}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{13}}}, n)
+        elseif types[j] === Characters{14}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{14}}}, n)
+        elseif types[j] === Characters{15}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{15}}}, n)
+        elseif types[j] === Characters{1}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{1}}}, n)
+        elseif types[j] === Characters{2}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{2}}}, n)
+        elseif types[j] === Characters{4}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{4}}}, n)
+        elseif types[j] === Characters{6}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{6}}}, n)
+        elseif types[j] === Characters{7}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{7}}}, n)
+        elseif types[j] === Characters{9}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{9}}}, n)
+        elseif types[j] === Characters{16}
+            _our_resize!(res[j]::Vector{Union{Missing,Characters{16}}}, n)
+        elseif types[j] === Time
+            _our_resize!(res[j]::Vector{Union{Missing, Time}}, n)
+        elseif types[j] === String31
+            _our_resize!(res[j]::Vector{Union{Missing,String31}}, n)
+        elseif types[j] === String63
+            _our_resize!(res[j]::Vector{Union{Missing,String63}}, n)
+        elseif types[j] === String127
+            _our_resize!(res[j]::Vector{Union{Missing,String127}}, n)
+        elseif types[j] === String255
+            _our_resize!(res[j]::Vector{Union{Missing,String255}}, n)
+        elseif types[j] === UInt8
+            _our_resize!(res[j]::Vector{Union{Missing, UInt8}}, n)
+        elseif types[j] === UInt16
+            _our_resize!(res[j]::Vector{Union{Missing, UInt16}}, n)
+        elseif types[j] === UInt32
+            _our_resize!(res[j]::Vector{Union{Missing, UInt32}}, n)
+        elseif types[j] === UInt64
+            _our_resize!(res[j]::Vector{Union{Missing, UInt64}}, n)
+        elseif types[j] === Int128
+            _our_resize!(res[j]::Vector{Union{Missing, Int128}}, n)
+        elseif types[j] === BigFloat
+            _our_resize!(res[j]::Vector{Union{Missing, BigFloat}}, n)
+        elseif types[j] === UUID
+            _our_resize!(res[j]::Vector{Union{Missing, UUID}}, n)
+        else # others are string
+            _our_resize!(res[j]::Vector{Union{Missing, String}}, n)
+        end
+    end
+end
+
 function find_end_of_line(buff, lo, hi, eol)
     eol_len = length(eol)
     last_eol = last(eol)

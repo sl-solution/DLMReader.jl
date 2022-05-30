@@ -1,4 +1,4 @@
-using DLMReader, InMemoryDatasets, InlineStrings, Dates
+using DLMReader, InMemoryDatasets
 using Test
 dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
 @testset "general usage" begin

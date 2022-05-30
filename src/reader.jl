@@ -15,6 +15,7 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
                 en = new_hi
             end
         end
+        # any new type added here must also be added to _resize_res_barrier! in util.jl (the function allocates the result)
         @inbounds if types[j] === Int64
            flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line, Int64; base = int_bases)
         elseif types[j] === Float64
@@ -457,7 +458,11 @@ function distribute_file(path, types; delimiter=',', linebreak='\n', header=true
 
     if !multiple_obs
 
-        lsize_estimate = estimate_linesize(path, eol, lsize, f_pos, guessingrows=guessingrows)
+        lsize_estimate = estimate_linesize(path, eol, lsize, f_pos+1, guessingrows=guessingrows)
+        if lsize_estimate == 0 # TODO we need a better strategy
+            lsize_estimate = lsize
+        end
+
         lsize_estimate > lsize && throw(ArgumentError("the lines are larger than $lsize, increase buffers by setting `lsize` and `buffsize` arguments, they are currently set as $lsize and $buffsize respectively"))
         if fixed != 0:0
             colwidth = Vector{UnitRange{Int}}(undef, length(types))
@@ -542,7 +547,9 @@ function distribute_file(path, types; delimiter=',', linebreak='\n', header=true
             line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, hi[last_chunk_to_read], skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
         end
 
-        res = Any[allocatecol_for_res(types[i], min(sum(ns), limit)) for i in 1:length(types)]
+        # res = Any[allocatecol_for_res(types[i], min(sum(ns), limit)) for i in 1:length(types)]
+        res = Any[allocatecol_for_res(types[i], 0) for i in 1:length(types)]
+        _resize_res_barrier!(res, types, min(sum(ns), limit), threads)
 
         CLOSE(f)
 

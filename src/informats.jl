@@ -62,9 +62,9 @@ end
 
 
 # In general any function defined as informat must have these specifications:
-# * it must take three positional arguments, x, lo, hi, where x is a custom structure and x.data is a vector of UInt8
-# * function can change the values of x.data but only within lo:hi
-# * function must do the operations in place and return lo,hi or revised lo,hi
+# * it must one positional argument, x
+# * function must change x in-place
+# * function must return modified x (not copy of it) or a subset of it like x[1:2]
 
 
 function COMMA!(x)
@@ -72,7 +72,7 @@ function COMMA!(x)
     hi = x.hi
     cnt = hi
     for i in hi:-1:lo
-        if !(x.string.data[i] in (UInt8(','), UInt8('$'), UInt8('£')))
+        if !(x.string.data[i] in (UInt8(','), UInt8('$')))
             x.string.data[cnt] = x.string.data[i]
             cnt -= 1
             cnt < lo && break

@@ -36,7 +36,7 @@ function warmup()
    ds = filereader(IOBuffer("""x1,x2
       100,100
       101,101
-      """), int_base = Dict(1 => (Int, 2)))
+      """), int_base = Dict(1 => 2))
   
    ds = filereader(IOBuffer("""COL1, COL2
       1,2
