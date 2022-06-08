@@ -35,12 +35,9 @@ include("writer.jl")
 include("precompile.jl")
 function __init__()
     # register build-in informats
-    register_informat(NA!; quiet = true)
-    register_informat(COMMA!; quiet = true)
-    register_informat(COMMAX!; quiet = true)
-    register_informat(STRIP!; quiet = true)
-    register_informat(ACC!; quiet = true)
-    register_informat(COMPRESS!; quiet = true)
-    register_informat(BOOL!; quiet = true)   
+    for infmt in DLMReader_buildin_informats
+        f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(infmt)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
+        push!(DLMReader_Registered_Informats, Symbol(nameof(infmt)) => f_ptr)
+    end
 end
 end

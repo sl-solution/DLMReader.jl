@@ -322,7 +322,7 @@ function _process_iobuff_multiobs!(res, buffer, types, dlm, eol, current_line, l
 end
 
 
-# lo is the begining of the read and hi is the end of read. hi should be end of file or a linebreak
+# lo is the beginning of the read and hi is the end of read. hi should be end of file or a linebreak
 function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnames; delimiter = ',', linebreak = '\n', lsize = 2^15, buffsize = 2^16, fixed = 0:0, df = dateformat"yyyy-mm-dd", dlmstr = nothing, informat = Dict{Int, Symbol}(), escapechar = nothing, quotechar = nothing, warn = 20, eolwarn = true, int_bases = Dict{Int, Int}(), string_trim = false, ignorerepeated = false, multiple_obs = false, limit = typemax(Int), line_informat = nothing, total_line_skipped = 0)
     read_one_obs = true
     f = OUR_OPEN(path, read = true)
@@ -370,7 +370,7 @@ function readfile_chunk!(res, llo, lhi, charbuff, path, types, n, lo, hi, colnam
         # second part of track_problems keep the location of the probem in the current line
         track_problems = [falses(length(types)), [0:0 for _ in 1:20]]
 
-        # TODO we should have a strategy when line is to long
+        # TODO we should have a strategy when line is too long
         while true
             cnt_read_bytes = readbytes!(f, buffer.data)
             if cnt_read_bytes == 0
@@ -512,7 +512,7 @@ function distribute_file(path, types; delimiter=',', linebreak='\n', header=true
 
     charbuff = Vector{Vector{UInt8}}()
 
-    # this is temp approach to TimeType parsing, later we should use DT{N} structure to parse TimeType
+    # this is a temp approach to TimeType parsing, later we should use DT{N} structure to parse TimeType
     if dtformat isa Dict
         dtfmt = Vector{valtype(dtformat)}()
     else
@@ -797,7 +797,7 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     else
         throw(ArgumentError("types should be a vector of types"))
     end
-    # update intypes with information about integer base - by default we assume integer are base 10
+    # update intypes with information about integer base - by default we assume integers are base 10
     if !isempty(int_base)
         for (k, v) in int_base
             # if int_base is set for the kth columun and its type is something else change its type to Int

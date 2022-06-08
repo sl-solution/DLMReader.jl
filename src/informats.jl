@@ -3,7 +3,7 @@ global DLMReader_Registered_Informats = Dict{Symbol, Ptr{Nothing}}()
 
 function register_informat(f; quiet = false)
     @assert Core.Compiler.return_type(f, Tuple{SUBSTRING}) == SUBSTRING "informat must return its input or a subset of its input"
-    
+    @assert !(f in DLMReader_buildin_informats) "Informat $(nameof(f)) is built-in, users are not allowed to override them, choose another name for the new informat."
     f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(f)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
     flag = false
     if haskey(DLMReader_Registered_Informats, Symbol(nameof(f)))
@@ -65,7 +65,6 @@ end
 # * it must one positional argument, x
 # * function must change x in-place
 # * function must return modified x (not copy of it) or a subset of it like x[1:2]
-
 
 function COMMA!(x)
     lo = x.lo
@@ -188,3 +187,6 @@ function COMPRESS!(x)
     fill!(view(x.string.data, lo:cnt), 0x20)
     _SUBSTRING_(x.string, cnt+1:hi)
 end
+
+# update this list when a new built-in informat is defined
+DLMReader_buildin_informats = Set([STRIP!, COMMA!, COMMAX!, NA!, COMPRESS!, BOOL!, ACC!])
