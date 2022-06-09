@@ -17,7 +17,7 @@ It works very well for huge files (long or/and wide).
 
 ## Features
 
-`DLMReader.jl` has some interesting features which distinguish it from other packages for reading delimited files. In what follows, we list a few of them;
+`DLMReader.jl` has some interesting features which distinguish it from other packages for reading delimited files. In what follows, we list few of them;
 
 * **`Informats`**: The `DLMReader` package uses  `informats`  to call a class of functions on the raw text before parsing its value(s). This provides a flexible and extendable approach to parse values with special patterns. For instance, using the predefined informat `COMMA!` allows users to read a numeric column with "thousands separator" and/or the dollar sign, e.g. using this informat, the raw text like "`$12,000.00`" will be parsed as "`12000.00`". Moreover,  `informat`s support function composing, e.g. `COMMA! ∘ ACC!`  parses "`$(12,000.00)`" as "`-12000.00`", i.e. `ACC!` is first applied and then `COMMA!` is applied on its result.
   
