@@ -43,11 +43,13 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}; base = 10) whe
     flag
 end
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Real
-    hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
-    (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+    # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
+    # (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+    # related to DLMReader issue #5
+    val = InlineStrings.Parsers.xparse(T, lbuff, cc, nd)
     flag = 0
-    if hasvalue
-        res[current_line[]] = val
+    if val.code == 33
+        res[current_line[]] = val.val
     else
         for i in cc:nd
             @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
@@ -59,23 +61,23 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Rea
     end
     flag
 end
-function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
-    hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
-    (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
-    flag = 0
-    if hasvalue
-        res[current_line[]] = val
-    else
-        for i in cc:nd
-            @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
-                flag = 1
+# function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Float32})
+#     hasvalue, val = ccall(:jl_try_substrtof, Tuple{Bool, Float32},
+#     (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
+#     flag = 0
+#     if hasvalue
+#         res[current_line[]] = val
+#     else
+#         for i in cc:nd
+#             @inbounds if (lbuff[i] != 0x20 && lbuff[i] != 0x2e)
+#                 flag = 1
 
-            end
-        end
-        res[current_line[]] = missing
-    end
-    flag
-end
+#             end
+#         end
+#         res[current_line[]] = missing
+#     end
+#     flag
+# end
 
 function buff_parser(res, lbuff, cc, nd, current_line, ::Type{BigFloat})
     newlo = cc
