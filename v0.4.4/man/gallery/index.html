@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Gallery · DLMReader</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DLMReader</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../tutorial_basic/">Basic</a></li><li><a class="tocitem" href="../tutorial_adv/">Advanced</a></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../read/">Reading and Writing</a></li><li><a class="tocitem" href="../informat/">Informats</a></li></ul></li><li class="is-active"><a class="tocitem" href>Gallery</a></li><li><a class="tocitem" href="../performance/">Performance Tips</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Gallery</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Gallery</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/sl-solution/DLMReader.jl/blob/main/docs/src/man/gallery.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Gallery"><a class="docs-heading-anchor" href="#Gallery">Gallery</a><a id="Gallery-1"></a><a class="docs-heading-anchor-permalink" href="#Gallery" title="Permalink"></a></h1><ul><li>multiple observation per line:</li></ul><pre><code class="language-julia hljs">julia&gt; filereader(IOBuffer(&quot;1,2,3,4,5\n6,7,8\n10\n&quot;),
+                  header = [:x1, :x2],
+                  types = [Int, Int],
+                  multiple_obs = true)
+5×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity
+     │ Int64?    Int64?   
+─────┼────────────────────
+   1 │        1         2
+   2 │        3         4
+   3 │        5         6
+   4 │        7         8
+   5 │       10   missing</code></pre><ul><li>Reading computer outputs: </li></ul><pre><code class="language-julia hljs">julia&gt; filereader(IOBuffer(&quot;&quot;&quot; name1 name2 avg1 avg2  y
+              0   A   D   75   5    32
+              1   A   D   75   5    32
+              2   D   L   32   7    12
+              3   F   C   99   8    42
+              4   F   C   99   8    42
+              5   C   A   43   6    39
+              6   C   A   43   6    39
+              7   L   R   53   3    11
+              8   R   F   21   2    25
+              9   R   F   21   2    25
+              &quot;&quot;&quot;), delimiter = &#39; &#39;, ignorerepeated = true, emptycolname = true)
+10×6 Dataset
+ Row │ NONAME1   name1     name2     avg1      avg2      y        
+     │ identity  identity  identity  identity  identity  identity
+     │ Int64?    String?   String?   Int64?    Int64?    Int64?   
+─────┼────────────────────────────────────────────────────────────
+   1 │        0  A         D               75         5        32
+   2 │        1  A         D               75         5        32
+   3 │        2  D         L               32         7        12
+   4 │        3  F         C               99         8        42
+   5 │        4  F         C               99         8        42
+   6 │        5  C         A               43         6        39
+   7 │        6  C         A               43         6        39
+   8 │        7  L         R               53         3        11
+   9 │        8  R         F               21         2        25
+  10 │        9  R         F               21         2        25</code></pre><ul><li>Removing <code>(.*?)</code> and dealing with <code>£</code>:</li></ul><pre><code class="language-julia hljs">julia&gt; function INFMT!(x)
+           remove!(x, findfirst(r&quot;\(.*?\)&quot;, x))
+       end
+           
+INFMT! (generic function with 1 method)
+
+julia&gt; register_informat(INFMT!)
+[ Info: Informat INFMT! has been registered
+
+julia&gt; function RM£!(x)
+         remove!(x, &quot;£&quot;)
+      end
+julia&gt; register_informat(RM£!)
+[ Info: Informat RM£! has been registered
+
+julia&gt; filereader(IOBuffer(&quot;&quot;&quot;x1;x2
+            1(comment);£12,000.00
+            2;£(100.00)
+            3;£(10,000.00)
+       &quot;&quot;&quot;), delimiter = &#39;;&#39;, informat = Dict(1 =&gt; INFMT!, 2 =&gt; RM£! ∘ COMMA! ∘ ACC!))
+3×2 Dataset
+ Row │ x1        x2       
+     │ identity  identity 
+     │ Int64?    Float64? 
+─────┼────────────────────
+   1 │        1   12000.0
+   2 │        2    -100.0
+   3 │        3  -10000.0</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../informat/">« Informats</a><a class="docs-footer-nextpage" href="../performance/">Performance Tips »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.19 on <span class="colophon-date" title="Thursday 9 June 2022 08:09">Thursday 9 June 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
