@@ -35,9 +35,34 @@ include("writer.jl")
 include("precompile.jl")
 function __init__()
     # register build-in informats
-    for infmt in DLMReader_buildin_informats
-        f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(infmt)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
-        push!(DLMReader_Registered_Informats, Symbol(nameof(infmt)) => f_ptr)
-    end
+    #STRIP!
+    f_ptr = @cfunction(STRIP!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :STRIP! => f_ptr)
+
+    #COMMA!
+    f_ptr = @cfunction(COMMA!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :COMMA! => f_ptr)
+
+    #COMMAX!
+    f_ptr = @cfunction(COMMAX!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :COMMAX! => f_ptr)
+
+    #NA!
+    f_ptr = @cfunction(NA!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :NA! => f_ptr)
+
+    #BOOL!
+    f_ptr = @cfunction(BOOL!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :BOOL! => f_ptr)
+
+    #ACC!
+    f_ptr = @cfunction(ACC!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :ACC! => f_ptr)
+
+    #COMPRESS!
+    f_ptr = @cfunction(COMPRESS!, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))
+    push!(DLMReader_Registered_Informats, :COMPRESS! => f_ptr)
+
+
 end
 end
