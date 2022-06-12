@@ -745,6 +745,16 @@ Read a delimited file into `Julia`.
 """
 function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} = ',', linebreak::Union{Nothing, Char, Vector{Char}} = nothing, header = true, threads::Bool = true, guessingrows::Int = 20, fixed::Union{<:UnitRange, Dict{Int, <:UnitRange}} = 0:0, buffsize::Int = 2^16, quotechar::Union{Nothing, Char} = nothing, escapechar::Union{Nothing, Char} = nothing, dtformat = dateformat"yyyy-mm-dd", dlmstr::Union{Nothing, <:AbstractString} = nothing, lsize::Int = 2^15, informat = Dict(), warn::Int = 20, eolwarn::Bool = true, emptycolname::Bool = false, int_base::Dict{Int, Int} = Dict{Int, Int}(), string_trim::Bool = false, makeunique::Bool = false, ignorerepeated::Bool = false, multiple_obs::Bool = false, skipto::Int = 1, limit::Int = typemax(Int), line_informat = nothing)::Dataset
     
+
+    # this initilises the informat once in runtime
+    # putting this in __init__ caused allocation (for sysimage)
+    # using eval fixes the problem however, caused precompilation of other packages
+    if !isempty(informat) && isempty(DLMReader_Registered_Informats)
+        for in_fmt in DLMReader.DLMReader_buildin_informats
+            register_informat(in_fmt; quiet = true, force = true)
+        end
+    end
+
     infmt = Dict{Int, Vector{Ptr{Nothing}}}()
     if !isempty(informat)
         for (k,v) in informat

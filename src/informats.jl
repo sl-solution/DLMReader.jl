@@ -1,9 +1,11 @@
 global DLMReader_Registered_Informats = Dict{Symbol, Ptr{Nothing}}()
 
 
-function register_informat(f; quiet = false)
+function register_informat(f; quiet = false, force = false)
     @assert Core.Compiler.return_type(f, Tuple{SUBSTRING}) == SUBSTRING "informat must return its input or a subset of its input"
-    @assert !(f in DLMReader_buildin_informats) "Informat $(nameof(f)) is built-in, users are not allowed to override them, choose another name for the new informat."
+    if !force
+        @assert !(f in DLMReader_buildin_informats) "Informat $(nameof(f)) is built-in, users are not allowed to override it, choose another name for the new informat."
+    end
     f_ptr = eval(:(@cfunction((inx,lo,hi)->begin; x = SUBSTRING(LineBuffer(inx), lo, hi);_newsub_ = $(f)(x); _newsub_.lo, _newsub_.hi; end, Tuple{Int, Int}, (Vector{UInt8}, Int, Int))))
     flag = false
     if haskey(DLMReader_Registered_Informats, Symbol(nameof(f)))
@@ -60,12 +62,6 @@ Base.@propagate_inbounds function STRIP!(x)
     _SUBSTRING_(x.string, lo:hi)
 end
 
-function STRIP!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = STRIP!(x)
-    _newsub_.lo, _newsub_.hi
-end
-
 
 # In general any function defined as informat must have these specifications:
 # * it must one positional argument, x
@@ -88,12 +84,6 @@ function COMMA!(x)
     fill!(view(x.string.data, lo:cnt), 0x20)
     
     _SUBSTRING_(x.string, cnt+1:hi)
-end
-
-function COMMA!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = COMMA!(x)
-    _newsub_.lo, _newsub_.hi
 end
 
 function COMMAX!(x)
@@ -122,11 +112,6 @@ function COMMAX!(x)
     _SUBSTRING_(x.string, cnt+1:hi)
 end
 
-function COMMAX!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = COMMAX!(x)
-    _newsub_.lo, _newsub_.hi
-end
 
 # treats NA,na,Na,nA,... as missing value for numeric columns
 function NA!(x)
@@ -145,11 +130,6 @@ function NA!(x)
         fill!(view(x.string.data, lo:hi), 0x20)
     end
     _SUBSTRING_(x.string, lo:hi)
-end
-function NA!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = NA!(x)
-    _newsub_.lo, _newsub_.hi
 end
 
 Base.@propagate_inbounds function BOOL!(x)
@@ -176,11 +156,6 @@ Base.@propagate_inbounds function BOOL!(x)
     end
     _SUBSTRING_(x.string, lo:hi)
 end
-function BOOL!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = BOOL!(x)
-    _newsub_.lo, _newsub_.hi
-end
 
 function ACC!(x)
     lo = x.lo
@@ -199,11 +174,6 @@ function ACC!(x)
     end
     _SUBSTRING_(x.string, lo:hi)
 end
-function ACC!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = ACC!(x)
-    _newsub_.lo, _newsub_.hi
-end
 
 function COMPRESS!(x)
     _newsub_ = STRIP!(x)
@@ -219,11 +189,6 @@ function COMPRESS!(x)
     end
     fill!(view(x.string.data, lo:cnt), 0x20)
     _SUBSTRING_(x.string, cnt+1:hi)
-end
-function COMPRESS!(inx, lo, hi)
-    x = SUBSTRING(LineBuffer(inx), lo, hi)
-    _newsub_ = COMPRESS!(x)
-    _newsub_.lo, _newsub_.hi
 end
 
 # update this list when a new built-in informat is defined
