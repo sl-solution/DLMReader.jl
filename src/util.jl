@@ -153,6 +153,8 @@ function _resize_res_barrier!(res, types, n, threads)
             _our_resize!(res[j]::Vector{Union{Missing, UInt64}}, n)
         elseif types[j] === Int128
             _our_resize!(res[j]::Vector{Union{Missing, Int128}}, n)
+        elseif types[j] === UInt128
+            _our_resize!(res[j]::Vector{Union{Missing, UInt128}}, n)
         elseif types[j] === BigFloat
             _our_resize!(res[j]::Vector{Union{Missing, BigFloat}}, n)
         elseif types[j] === UUID

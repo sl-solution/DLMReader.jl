@@ -100,6 +100,8 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
             flag = buff_parser(res[j]::Vector{Union{Missing, UInt64}}, buffer, cc, en, current_line, UInt64; base = int_bases)
         elseif types[j] === Int128
             flag = buff_parser(res[j]::Vector{Union{Missing, Int128}}, buffer, cc, en, current_line, Int128; base = int_bases)
+        elseif types[j] === UInt128
+            flag = buff_parser(res[j]::Vector{Union{Missing, UInt128}}, buffer, cc, en, current_line, UInt128; base = int_bases)
         elseif types[j] === BigFloat
             flag = buff_parser(res[j]::Vector{Union{Missing, BigFloat}}, buffer, cc, en, current_line, BigFloat)
         elseif types[j] === UUID
@@ -749,7 +751,7 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     # this initilises the informat once in runtime
     # putting this in __init__ caused allocation (for sysimage)
     # using eval fixes the problem however, caused precompilation of other packages
-    if !isempty(informat) && isempty(DLMReader_Registered_Informats)
+    if !isempty(informat) && !haskey(DLMReader_Registered_Informats, :NA!)
         for in_fmt in DLMReader.DLMReader_buildin_informats
             register_informat(in_fmt; quiet = true, force = true)
         end
@@ -828,6 +830,5 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
             throw(ArgumentError("`filereader` doesn't support `line_informat` when `multiple_obs = true`"))
         end
     end
-
     distribute_file(path, intypes; delimiter = delimiter, linebreak = linebreak, header = header, threads = threads, guessingrows = guessingrows, fixed = fixed, buffsize = buffsize, dtformat = dtformat, dlmstr = dlmstr, lsize = lsize, informat = infmt, escapechar = escapechar, quotechar = quotechar, warn = warn, eolwarn = eolwarn, emptycolname = emptycolname, int_bases = int_base, string_trim = string_trim, makeunique = makeunique, ignorerepeated = ignorerepeated, multiple_obs = multiple_obs, skipto = skipto, limit = limit, line_informat = l_infmt)
 end
