@@ -771,7 +771,7 @@ function filereader(path; types = nothing, delimiter::Union{Char, Vector{Char}} 
     end
 
 
-    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255,  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
+    supported_types = [Bool, Int8, Int16, Int32, Int64, Int8, UInt8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255,  Characters{1},  Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
     
     lsize > buffsize && throw(ArgumentError("`lsize` cannot be larger than `buffsize`"))
     ignorerepeated && dlmstr !== nothing && throw(ArgumentError("`ignorerepeated` option cannot be used when `dlmstr` is set"))
