@@ -50,6 +50,8 @@ Base.@propagate_inbounds function STRIP!(x)
         if x.string.data[i] != 0x20
             lo = i
             break
+        else
+            lo = i
         end
     end
     for i in hi:-1:lo
