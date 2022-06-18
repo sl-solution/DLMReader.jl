@@ -44,6 +44,41 @@ dir = joinpath(dirname(pathof(DLMReader)), "..", "test", "csvfiles")
     end
     ds = filereader(joinpath(dir, "euro.csv"), header = false, delimiter=';', informat = Dict(2 => COMMAX!))
     @test ds == Dataset([Union{Missing, String}["a", "b", "c", "f", "l", "g"], Union{Missing, Float64}[100.0, 34343.0, 343.34, missing, 123343.0, 3434.0], Union{Missing, Int64}[1, 2, missing, 12, 2, 1]], :auto)
+
+    ds1 = filereader(joinpath(dir, "t_1.txt")) 
+    ds2 = filereader(joinpath(dir, "t_1.txt"), small_files_size = 0)
+    @test ds1 == ds2 == Dataset(y1=Union{Missing, String}[missing, missing, missing, missing,missing], x2=[1,2,missing,3,missing])
+
+
+    ds1 = filereader(joinpath(dir, "t_1.txt"), skipto = 2, limit = 3, header = false) 
+    ds2 = filereader(joinpath(dir, "t_1.txt"), small_files_size = 0, skipto = 2, limit = 3, header = false)
+    @test ds1 == ds2 == Dataset(x1=Union{Missing, String}[missing, missing,missing], x2=[1,2,missing])
+
+    ds1 = filereader(joinpath(dir, "t_1.txt"), skipto = 3, limit = 3, header = false) 
+    ds2 = filereader(joinpath(dir, "t_1.txt"), small_files_size = 0, skipto = 3, limit = 3, header = false)
+    @test ds1 == ds2 == Dataset(x1=Union{Missing, String}[missing, missing,missing], x2=[2,missing,3])
+
+    ds1 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64))
+    ds2 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), small_files_size = 0)
+    @test ds1 == ds2 == Dataset(x1 = ["1,2", "32", "32 ", "34", "4545"], x2=[3,32,3453,34,5645], x3=[5.5,missing,34,45,missing], x4=["\"3\"424", "  3", missing,"45","343"])
+
+    ds1 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict([1,4] .=> STRIP!))
+    ds2 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict([1,4] .=> STRIP!), small_files_size = 0)
+    @test ds1 == ds2 == Dataset(x1 = ["1,2", "32", "32", "34", "4545"], x2=[3,32,3453,34,5645], x3=[5.5,missing,34,45,missing], x4=["\"3\"424", "3", missing,"45","343"])
+
+    ds1 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict(1=>COMMAX!))
+    ds2 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict(1=>COMMAX!), small_files_size = 0)
+    @test ds1 == ds2 == Dataset(x1 = [1.2, 32, 32, 34, 4545], x2=[3,32,3453,34,5645], x3=[5.5,missing,34,45,missing], x4=["\"3\"424", "  3", missing,"45","343"])
+
+
+    ds1 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict(1=>COMMAX!), skipto = 3, limit = 1)
+    ds2 = filereader(joinpath(dir, "t_2.txt"), header = false, quotechar = '"', types = Dict(3=>Float64), informat = Dict(1=>COMMAX!), skipto = 3, limit = 1, small_files_size = 0)
+    @test ds1 == ds2 == Dataset(x1 = [32], x2=[3453], x3=[34.0])
+
+    ds1 = filereader(joinpath(dir, "t_2.txt"), header = [:y1,:y2,:y3,:y4], quotechar = '"', types = [Int, Int, Float64, Int], informat = Dict(1=>COMMAX!), skipto = 3, limit = 1)
+    ds2 = filereader(joinpath(dir, "t_2.txt"), header = [:y1,:y2,:y3,:y4], quotechar = '"', types = [Int, Int, Float64, Int], informat = Dict(1=>COMMAX!), skipto = 3, limit = 1, small_files_size = 0)
+    @test ds1 == ds2 == Dataset(y1 = [32], y2=[3453], y3=[34.0], y4=Union{Int, Missing}[missing])
+
 end
 
 @testset "multiple observations per line" begin
