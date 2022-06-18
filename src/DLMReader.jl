@@ -25,7 +25,7 @@ export
 # see https://github.com/sl-solution/DLMReader.jl/issues/5
 if Base.Sys.iswindows()
     function typeparser(::Type{T}, x::Vector{UInt8}, lo::Int, hi::Int) where T <: Real
-        val = inlinestrings.Parsers.xparse(T, x, lo, hi)
+        val = InlineStrings.Parsers.xparse(T, x, lo, hi)
         if val.code == 33
             return true, val.val
         else
