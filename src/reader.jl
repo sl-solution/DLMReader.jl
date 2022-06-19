@@ -301,7 +301,7 @@ end
                 last_valid_buff = cnt_read_bytes - (cur_position - hi)
             end
             if multiple_obs
-                read_one_obs = _process_iobuff_multiobs_parse!(res, buffer, types, dlm, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems_1, track_problems_2, Characters_types, TimeType_types)
+                read_one_obs = _process_iobuff_multiobs_parse!(res, buffer, types, delimiter, eol, current_line, last_valid_buff, charbuff, df, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, track_problems_1, track_problems_2, Characters_types, TimeType_types)
             else
                 _process_iobuff_parse!(res, buffer, types, delimiter, eol, current_line, last_valid_buff, charbuff, df, fixed, dlmstr, informat, quotechar, escapechar, warn, colnames, int_bases, string_trim, ignorerepeated, limit, line_informat, track_problems_1, track_problems_2, total_line_skipped, Characters_types, TimeType_types)
             end
@@ -512,7 +512,7 @@ function distribute_file_parse(path::Union{AbstractString, IOBuffer},
         end
     else
         res = [allocatecol_for_res(types[i], 1) for i in 1:length(types)]
-        readfile_chunk_parse!(res, line_lo[i], charbuff[i], path, types, lo[i], hi[i], colnames, delimiter, linebreak, buffsize, fixed, dtformat, dlmstr, informat, escapechar, quotechar, warn, eolwarn, int_bases, string_trim, ignorerepeated, true, limit, line_informat, total_line_skipped)
+        readfile_chunk_parse!(res, 1, charbuff[1], path, types, start_of_read, end_of_read, colnames, delimiter, linebreak, buffsize, fixed, dtformat, dlmstr, informat, escapechar, quotechar, warn, eolwarn, int_bases, string_trim, ignorerepeated, true, limit, line_informat, total_line_skipped)
     end
 
     Dataset(res, colnames, copycols=false, makeunique=makeunique)
