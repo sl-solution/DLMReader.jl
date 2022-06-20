@@ -114,7 +114,7 @@ In the next step, we store the data types of the columns in an array and pass it
 ```julia
 julia> _tmp = content(taxi, output = true)[2];
 
-julia> alltypes = disallowmissing(_tmp[:, :eltype]);
+julia> alltypes = identity.(_tmp[:, :eltype]);
 
 julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], 
                             types = alltypes, 
