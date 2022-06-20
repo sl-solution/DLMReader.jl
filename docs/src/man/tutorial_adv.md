@@ -181,6 +181,7 @@ julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'],
   20 │ CMT        2010-03-15T12:20:25  2010-03-15T12:26:38                1            0.9          -73.9983          40.7454          1                   0           -73.9954
                                                                                                                                                       8 columns and 17 rows omitted
 
+julia> rename!(taxi, "total_amount \n" => "total_amount")
 ```
 
 ## Dealing with String columns
