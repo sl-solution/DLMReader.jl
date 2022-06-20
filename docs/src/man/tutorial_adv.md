@@ -85,7 +85,7 @@ Columns information
 │  15 │ mta_tax            │ identity │ Float64 │
 │  16 │ tip_amount         │ identity │ Int64   │
 │  17 │ tolls_amount       │ identity │ Int64   │
-│  18 │ total_amount       │ identity │ Float64 │
+│  18 │ total_amount \n    │ identity │ Float64 │
 └─────┴────────────────────┴──────────┴─────────┘
 ```
 
@@ -156,6 +156,8 @@ The logic that we are going to follow is "replacing the second `,` in `,,,` with
 The `line_informat` keyword argument accepts a registered informat which is a function with one positional argument, a special type of mutable string.
 
 > Note that the `line_informat` informat is called on each line of the input file, thus, use low level programming to avoid any allocation.
+
+> Note that the last column name has an extra '\n'. To fix it, user can call `rename!(taxi, "total_amount \n" => "total_amount")`.
 
 ```julia
 julia> function LINFMT!(x)
