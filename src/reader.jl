@@ -23,7 +23,7 @@ function val_opts(opts)
 end
 
 # filereader function
-function filereader(path::Union{AbstractString, IOBuffer}; opts...)::Dataset
+function filereader(path::Union{AbstractString, IOBuffer}; opts...)
     optsd = val_opts(opts)
 
     # dlm 
@@ -108,9 +108,6 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)::Dataset
 
     ignorerepeated = get(optsd, :ignorerepeated, false)::Bool
 
-
-
-
     threads = get(optsd, :threads, true)::Bool
     guessingrows = get(optsd, :guessingrows, 20)::Int
     buffsize = get(optsd, :buffsize, 2^16)::Int
@@ -177,13 +174,21 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)::Dataset
     if header
         l_length, start_of_file = read_one_line(path, start_of_file+1, FILESIZE(path), linebreak)
     end
-    small_size = get(optsd, :small_files_size, 2^27)
+    #by default, we switch to fast path when file size about 64MB or less
+    small_size = get(optsd, :small_files_size, 2^26)
     @assert small_size < 4294967295 "the `small_files_size` must be less than 4GB"
     if FILESIZE(path) - start_of_file + 1 < small_size
-        distribute_file_no_parse(path, start_of_file+1, FILESIZE(path), types, dlm, linebreak, header, colnames, threads, guessingrows, colwidth, small_size, df, charbuff, lsize, dlmstr, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, warn, eolwarn, int_base, string_trim, makeunique, ignorerepeated, multiple_obs, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
+        buffsize = small_size
     else
-        distribute_file_parse(path, start_of_file+1, FILESIZE(path), types, dlm, linebreak, header, colnames, threads, guessingrows, colwidth, buffsize, df, charbuff, lsize, dlmstr, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, warn, eolwarn, int_base, string_trim, makeunique, ignorerepeated, multiple_obs, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
+        nothing
     end
+    # for small files this prevents type inference for distribute_file_parse
+    if FILESIZE(path) - start_of_file + 1 < small_size
+        res = Expr(:call, distribute_file_no_parse, path, start_of_file+1, FILESIZE(path), types, dlm, linebreak, header, colnames, threads, guessingrows, colwidth, buffsize, df, charbuff, lsize, dlmstr, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, warn, eolwarn, int_base, string_trim, makeunique, ignorerepeated, multiple_obs, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
+    else
+        res = Expr(:call, distribute_file_parse, path, start_of_file+1, FILESIZE(path), types, dlm, linebreak, header, colnames, threads, guessingrows, colwidth, buffsize, df, charbuff, lsize, dlmstr, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, warn, eolwarn, int_base, string_trim, makeunique, ignorerepeated, multiple_obs, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
+    end
+    eval(res)
     
 end
 
@@ -238,8 +243,6 @@ end
         TimeType_types = nothing
     end
 
-
-
     try
         eol = linebreak
         eol_first = first(eol)
@@ -256,7 +259,7 @@ end
         seek(f, max(0, lo - 1))
 
         # to track parsing problem for better warnings
-        # second part of track_problems keep the location of the probem in the current line
+        # second part of track_problems keep the location of the problem in the current line
         # we separate them to create concrete types
         track_problems_1 = falses(length(types))
         track_problems_2 = [0:0 for _ in 1:20]
@@ -271,7 +274,7 @@ end
 
             if !eof(f) && cur_position < hi
                 if buffer.data[end] !== eol_last || buffer.data[end-eol_len+1] !== eol_first
-                    #this means the buffer is not ended with a eol char, so we move back into buffer to have complete line
+                    #this means the buffer is not ended with an eol char, so we move back in buffer to have complete line
                     back_cnt = 0
                     for i in buffsize:-1:1
                         last_valid_buff = i
@@ -494,7 +497,6 @@ function distribute_file_parse(path::Union{AbstractString, IOBuffer},
             line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, hi[last_chunk_to_read], skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
         end
 
-        # res = Any[allocatecol_for_res(types[i], min(sum(ns), limit)) for i in 1:length(types)]
         res = [allocatecol_for_res(types[i], 0) for i in 1:length(types)]
         _resize_res_barrier!(res, types, min(sum(ns), limit), threads)
 
@@ -577,20 +579,18 @@ function distribute_file_no_parse(path::Union{AbstractString, IOBuffer},
         res_idx = Matrix{Tuple{UInt32, UInt32}}(undef, n_rows, length(types))
 
         cnt_read_bytes, buffer = readfile_chunk_no_parse!(res_idx, 1, path, length(types), start_of_read, end_of_read, colnames, delimiter, linebreak, buffsize, fixed, dlmstr, escapechar, quotechar, warn, eolwarn, ignorerepeated, false, limit, line_informat, total_line_skipped)
-           
     else
         res_idx_temp = [Vector{Tuple{UInt32, UInt32}}(undef, 1) for _ in 1:length(types)]
         cnt_read_bytes, buffer = readfile_chunk_no_parse!(res_idx_temp, 1, path, length(types), start_of_read, end_of_read, colnames, delimiter, linebreak, buffsize, fixed, dlmstr, escapechar, quotechar, warn, eolwarn, ignorerepeated, true, limit, line_informat, total_line_skipped)
-
-        # next functions assume res_idx is a matrix, since for multiple_obs we assume the file is small we hcat the vector
+        
+        # # next functions assume res_idx is a matrix, since for multiple_obs we assume the file is small we hcat the vector
         res_idx = reduce(hcat, res_idx_temp)
         n_rows = length(res_idx_temp[1])
     end
     res = [allocatecol_for_res(types[i], 0) for i in 1:length(types)]
     _resize_res_barrier!(res, types, min(n_rows, limit), threads)
     outds = Dataset(res, colnames, copycols = false, makeunique = makeunique)
-    # Dataset(res, colnames, copycols=false, makeunique=makeunique)
-    parse_eachrow_of_dataset!(outds, types, buffer, res_idx, informat, dtformat, char_buff, int_bases, string_trim, threads, warn)
+    parse_eachrow_of_dataset!(outds, types, buffer, res_idx, informat, dtformat, char_buff, int_bases, string_trim, nrow(outds) > 100 ? threads : false, warn)
     outds
 
 end
