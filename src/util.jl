@@ -757,7 +757,7 @@ end
         cnt_read_bytes, buffer = readfile_chunk_no_parse!(res, 1, path, n_cols, start_of_read+1, f_pos, colnames, delimiter, linebreak, buffsize, fixed, dlmstr, escapechar, quotechar, 0, false, ignorerepeated , false, limit, line_informat, total_line_skipped)
         cnter = 1
         for i in 1:n_cols
-            if res[1, i][1] == 0
+            if res[1, i][1] == 0 || res[1, i][1] > res[1, i][2]
                 if emptycolname
                     push!(colnames, Symbol("NONAME"*string(cnter)))
                     cnter += 1
