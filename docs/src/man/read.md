@@ -35,6 +35,7 @@ User must pass the file name as the first argument of `filereader` to read a del
 * [warn](#warn)
 * [eolwarn](#eolwarn)
 * [threads](#threads)
+* [threshold](#threshold)
 
 ### `types` 
 
@@ -443,6 +444,12 @@ Control if the end-of-line character warning should be shown.
 For large files, the `filereader` function exploits all threads. However, this can be switch off by setting this argument as `false`.
 
 **Default:** `true`
+
+### `threshold`
+
+The file size threshold (in bytes) which specifies the minimum file size for switching to the high performance algorithm.
+
+**Default:** 2^26
 
 
 # `filewriter`
