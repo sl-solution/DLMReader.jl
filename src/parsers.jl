@@ -1,3 +1,4 @@
+all_integer_types = Union{Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64, UInt128}
 function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, df, ::Type{T}) where  T <: TimeType
     flag = 0
     if cc > nd
@@ -26,7 +27,7 @@ function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int
 end
 
 
-function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, ::Type{T}; base::Int = 10) where T <: Integer
+function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, ::Type{T}; base::Int = 10) where T <: all_integer_types
     val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = 0
     if val === nothing
@@ -248,7 +249,7 @@ function buff_parser_ind(problems, p_idx, lbuff, cc, nd, df, charbuff, base, tri
 end
 
 
-function buff_parser_ind(problems, p_idx, lbuff::LineBuffer, cc::Int, nd::Int, df, charbuff, base::Int, trim, ::Type{T}) where T <: Integer
+function buff_parser_ind(problems, p_idx, lbuff::LineBuffer, cc::Int, nd::Int, df, charbuff, base::Int, trim, ::Type{T}) where T <: all_integer_types
     val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = false
     if val === nothing
