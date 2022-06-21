@@ -259,7 +259,7 @@ function _process_iobuff_parse!(res::Vector{<:AbstractVector},
         if any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if !isempty(colnames)
-                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems_1, track_problems_2, current_line[]+total_line_skipped).message
+                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems_1, track_problems_2, current_line[]+total_line_skipped, false).message
                 end
             end
             # reset track_problems
@@ -307,6 +307,7 @@ function _process_iobuff_no_parse!(res::Matrix{Tuple{UInt32, UInt32}},
     # keep track of Characters and DateTime columns
 
     line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
+    res[current_line[], n_cols+1] = (line_start, line_end)
 
     # call line_informat if it exists
     if line_informat! !== nothing
@@ -475,7 +476,7 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
         if j == n_cols && any_problem_with_parsing>0
             if Threads.atomic_add!(number_of_errors_happen_so_far, 1) <= warn
                 if !isempty(colnames)
-                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems_1, track_problems_2, "UNKNOWN").message
+                    @warn DLMERRORS_PARSE_ERROR(buffer.data, line_start, line_end, res, current_line[], colnames, track_problems_1, track_problems_2, "UNKNOWN", true).message
                 end
             end
             # reset track_problems
@@ -527,6 +528,7 @@ function _process_iobuff_multiobs_no_parse!(res::Vector{Vector{Tuple{UInt32, UIn
     read_one_obs = false
 
     line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
+    res[n_cols+1][current_line[]] = (line_start, line_end)
 
     while true
 
@@ -552,6 +554,7 @@ function _process_iobuff_multiobs_no_parse!(res::Vector{Vector{Tuple{UInt32, UIn
             read_one_obs = false
             current_line[] += 1
             current_line[]> limit && return read_one_obs
+            res[n_cols+1][current_line[]] = (line_start, line_end)
             j = 1
             any_problem_with_parsing = 0
         end

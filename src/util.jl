@@ -53,8 +53,13 @@ end
 
 struct DLMERRORS_PARSE_ERROR <: DLMERRORS
     message::String
-    function DLMERRORS_PARSE_ERROR(buff, l_st, l_en, res, cur_l, col, track_problems_1, track_problems_2, line_number)
-        new("There are problems with parsing the input file at line $line_number (observation $cur_l) : $(DLMERRORS_PARSE(buff, col, res, track_problems_1, track_problems_2).message) the values are set as missing.\nMORE DETAILS: $(DLMERRORS_BUFFER(buff, l_st, l_en, res, cur_l, col).message)\n")
+    function DLMERRORS_PARSE_ERROR(buff, l_st, l_en, res, cur_l, col, track_problems_1, track_problems_2, line_number, multiple_obs)
+        # when multiple_obs = true, it is difficult to print out the line info
+        if multiple_obs
+            new("There are problems with parsing the input file for observation $cur_l : $(DLMERRORS_PARSE(buff, col, res, track_problems_1, track_problems_2).message) the values are set as missing.\n")
+        else
+            new("There are problems with parsing the input file at line $line_number (observation $cur_l) : $(DLMERRORS_PARSE(buff, col, res, track_problems_1, track_problems_2).message) the values are set as missing.\nMORE DETAILS: $(DLMERRORS_BUFFER(buff, l_st, l_en, res, cur_l, col).message)\n")
+        end
     end
 end
 
@@ -97,7 +102,7 @@ function  _our_resize!(x, n)
     fill!(x, missing)    
 end
 
-# it significantly improve the performance for very wide tables
+# it significantly improves the performance for very wide tables
 function _resize_res_barrier!(res::Vector{<:AbstractVector}, types::Vector{DataType}, n::Int, threads::Bool)
     InMemoryDatasets.@_threadsfor threads for j in 1:length(res)
         @inbounds if types[j] === Int64
@@ -750,7 +755,8 @@ end
         append!(colnames, [Symbol("x" * string(k)) for k in 1:n_cols])
     elseif header
         _lvarnames, f_pos = read_one_line(path, start_of_read+1, end_of_read, linebreak)
-        res = Matrix{Tuple{UInt32, UInt32}}(undef, 1, n_cols)
+        # one_extra column to keep the start and end of the line for warning reporting
+        res = Matrix{Tuple{UInt32, UInt32}}(undef, 1, n_cols+1)
 
         # check that returned buffer has not been reused inside readfile_chunk_no_parse
         @assert f_pos - start_of_read + 1 < buffsize "the input file is very wide, you must increase the buffsize/lsize"
@@ -890,7 +896,7 @@ end
 
 
 
-function parse_eachrow_of_dataset!(outds::Dataset, types::Vector{DataType}, buffer::LineBuffer, res_idx::Matrix{Tuple{UInt32, UInt32}}, informat::Union{Nothing, Dict{Int, Vector{Ptr{Nothing}}}}, dtformat, char_buff::Vector{Vector{UInt8}}, int_bases::Union{Nothing, Dict{Int, Int}}, string_trim::Bool, threads::Bool, warn::Int)
+function parse_eachrow_of_dataset!(outds::Dataset, types::Vector{DataType}, buffer::LineBuffer, res_idx::Matrix{Tuple{UInt32, UInt32}}, informat::Union{Nothing, Dict{Int, Vector{Ptr{Nothing}}}}, dtformat, char_buff::Vector{Vector{UInt8}}, int_bases::Union{Nothing, Dict{Int, Int}}, string_trim::Bool, threads::Bool, warn::Int, total_line_skipped::Int, multiple_obs::Bool)
     dt_cnt::Int = 1
     c_cnt::Int = 1
     problems = zeros(Bool, nrow(outds))
@@ -920,19 +926,20 @@ function parse_eachrow_of_dataset!(outds::Dataset, types::Vector{DataType}, buff
         end
         parse_eachrow(problems, types[i], InMemoryDatasets._columns(outds)[i], buffer, res_idx, i, infmt, df, charbuff_threads, int_base, string_trim, threads)
     end
+    # the last column contains the information about the line start and end location
     if any(problems)
         cnt_error = 1
         err_index = 0
         while true
+            cnt_error > warn && break
             err_index = findnext(problems, err_index+1)
             if err_index === nothing
                 break
             else
                 track_problems_1, track_problems_2 = parse_one_row(outds, err_index, types, buffer, res_idx, informat, dtformat, char_buff, int_bases, string_trim)
-                @warn DLMERRORS_PARSE_ERROR(buffer.data, res_idx[err_index, 1][1], res_idx[err_index, end][2], InMemoryDatasets._columns(outds), err_index, propertynames(outds), track_problems_1, track_problems_2, "UNKNOWN").message
+                @warn DLMERRORS_PARSE_ERROR(buffer.data, res_idx[err_index, length(types)+1][1],res_idx[err_index, length(types)+1][2], InMemoryDatasets._columns(outds), err_index, propertynames(outds), track_problems_1, track_problems_2, err_index + total_line_skipped, multiple_obs).message
             end
             cnt_error += 1
-            cnt_error > warn && break
         end
     end
 

@@ -18,10 +18,10 @@ julia> ds = Dataset(rand([1.1,2.2,3.4], 100, 100000), :auto);
 julia> filewriter("_tmp.csv", ds, buffsize = 2^25, lsize = 500000);
 
 julia> @time ds = filereader("_tmp.csv", buffsize = 2^21, lsize = 2^20, types = fill(Float64, 10^5));
-  1.163346 seconds (900.02 k allocations: 180.966 MiB)
+  1.084718 seconds (499.34 k allocations: 254.858 MiB, 2.08% gc time)
 
 julia> @time ds = filereader("_tmp.csv", buffsize = 2^21, lsize = 2^20, guessingrows = 2);
-  1.803125 seconds (4.10 M allocations: 289.193 MiB, 2.86% gc time)
+  1.100339 seconds (1.40 M allocations: 266.832 MiB, 0.83% gc time)
 ```
 
 ## Use `informat` to improve performance

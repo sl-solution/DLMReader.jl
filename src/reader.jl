@@ -1,7 +1,7 @@
 # constant variables
 const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
 
-# const supported_types = DataType[Bool, Int8, Int16, Int32, Int64, Int8, UInt8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1}, Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID]
+const supported_types = Set{DataType}([Bool, Int8, Int16, Int32, Int64, Int8, UInt8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1}, Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID])
 
 const supported_keywords = Symbol[:types, :delimiter, :linebreak, :header, :threads, :guessingrows, :fixed, :buffsize, :quotechar, :escapechar, :dtformat, :dlmstr, :lsize, :informat, :warn, :eolwarn, :emptycolname, :int_base, :string_trim, :makeunique, :ignorerepeated, :multiple_obs, :skipto, :limit, :line_informat, :small_files_size]
 
@@ -152,6 +152,9 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
     else   
       types = detect_types(path, start_of_file, FILESIZE(path), get(optsd, :types, Dict{Int, DataType}()), dlm, linebreak, header, colnames, guessingrows, fixed, dtformat, dlmstr, lsize, buffsize, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, ignorerepeated, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
     end
+
+    @assert all(types .∈ Ref(supported_types)) "DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters{1 - 16}, TimeType, String, InlineString, UUID"
+
     if !isempty(fixed)
         colwidth = Vector{UnitRange{Int}}(undef, length(types))
         for i in 1:length(colwidth)
@@ -575,12 +578,13 @@ function distribute_file_no_parse(path::Union{AbstractString, IOBuffer},
     number_of_errors_happen_so_far[] = 1
     if !multiple_obs
         n_rows = count_lines_of_file(path, start_of_read, end_of_read, eol)
-
-        res_idx = Matrix{Tuple{UInt32, UInt32}}(undef, n_rows, length(types))
+        # one_extra column to keep the start and end of the line for warning reporting
+        res_idx = Matrix{Tuple{UInt32, UInt32}}(undef, n_rows, length(types)+1)
 
         cnt_read_bytes, buffer = readfile_chunk_no_parse!(res_idx, 1, path, length(types), start_of_read, end_of_read, colnames, delimiter, linebreak, buffsize, fixed, dlmstr, escapechar, quotechar, warn, eolwarn, ignorerepeated, false, limit, line_informat, total_line_skipped)
     else
-        res_idx_temp = [Vector{Tuple{UInt32, UInt32}}(undef, 1) for _ in 1:length(types)]
+        # one_extra column to keep the start and end of the line for warning reporting
+        res_idx_temp = [Vector{Tuple{UInt32, UInt32}}(undef, 1) for _ in 1:length(types)+1]
         cnt_read_bytes, buffer = readfile_chunk_no_parse!(res_idx_temp, 1, path, length(types), start_of_read, end_of_read, colnames, delimiter, linebreak, buffsize, fixed, dlmstr, escapechar, quotechar, warn, eolwarn, ignorerepeated, true, limit, line_informat, total_line_skipped)
         
         # # next functions assume res_idx is a matrix, since for multiple_obs we assume the file is small we hcat the vector
@@ -590,7 +594,7 @@ function distribute_file_no_parse(path::Union{AbstractString, IOBuffer},
     res = [allocatecol_for_res(types[i], 0) for i in 1:length(types)]
     _resize_res_barrier!(res, types, min(n_rows, limit), threads)
     outds = Dataset(res, colnames, copycols = false, makeunique = makeunique)
-    parse_eachrow_of_dataset!(outds, types, buffer, res_idx, informat, dtformat, char_buff, int_bases, string_trim, nrow(outds) > 100 ? threads : false, warn)
+    parse_eachrow_of_dataset!(outds, types, buffer, res_idx, informat, dtformat, char_buff, int_bases, string_trim, nrow(outds) > 100 ? threads : false, warn, total_line_skipped, multiple_obs)
     outds
 
 end
@@ -706,7 +710,8 @@ function detect_types(path::Union{AbstractString, IOBuffer},
 
     hi = file_pos
 
-    res = Matrix{Tuple{UInt32, UInt32}}(undef, rows_in, n_cols)
+    # one_extra column to keep the start and end of the line for warning reporting
+    res = Matrix{Tuple{UInt32, UInt32}}(undef, rows_in, n_cols+1)
     # check that returned buffer has not been reused inside readfile_chunk_no_parse
     @assert hi - lo + 1 < buffsize "the input file is very wide, you must increase the buffsize/lsize for detecting types, otherwise decreasing gussingrows might resolve the issue"
     cnt_read_bytes, buffer = readfile_chunk_no_parse!(res, 1, path, n_cols, lo, hi, colnames, delimiter, linebreak, buffsize, colwidth, dlmstr, escapechar, quotechar, 0, false, ignorerepeated , false, limit, line_informat, total_line_skipped)
