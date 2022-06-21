@@ -81,3 +81,18 @@ function warmup()
    
    nothing
 end
+
+# since we are using Parsers under windows - see issue #5 / probably it would be safe for Julia > 1.8
+if !Base.Sys.iswindows()
+   precompile(Tuple{typeof(DLMReader.detect_types), Base.GenericIOBuffer{Array{UInt8, 1}}, Int64, Int64, Base.Dict{Int64, DataType}, Array{UInt8, 1}, Array{UInt8, 1}, Bool, Array{Symbol, 1}, Int64, Base.Dict{Int64, Base.UnitRange{Int64}}, Base.Dict{Int64, Dates.DateFormat{S, T} where T<:Tuple where S}, Bool, Int64, Int64, Nothing, Nothing, Nothing, Bool, Int64, Int64, Nothing})
+
+   precompile(Tuple{typeof(DLMReader.detect_types), String, Int64, Int64, Base.Dict{Int64, DataType}, Array{UInt8, 1}, Array{UInt8, 1}, Bool, Array{Symbol, 1}, Int64, Base.Dict{Int64, Base.UnitRange{Int64}}, Base.Dict{Int64, Dates.DateFormat{S, T} where T<:Tuple where S}, Bool, Int64, Int64, Nothing, Nothing, Nothing, Bool, Int64, Int64, Nothing})
+
+
+   precompile(Tuple{typeof(DLMReader.distribute_file_no_parse), Base.GenericIOBuffer{Array{UInt8, 1}}, Int64, Int64, Array{DataType, 1}, Array{UInt8, 1}, Array{UInt8, 1}, Bool, Array{Symbol, 1}, Bool, Int64, Nothing, Int64, Array{Dates.DateFormat{S, T} where T<:Tuple where S, 1}, Array{Array{UInt8, 1}, 1}, Int64, Bool, Nothing, Nothing, Nothing, Int64, Bool, Nothing, Bool, Bool, Bool, Bool, Int64, Int64, Nothing})
+
+   precompile(Tuple{typeof(DLMReader.distribute_file_no_parse), String, Int64, Int64, Array{DataType, 1}, Array{UInt8, 1}, Array{UInt8, 1}, Bool, Array{Symbol, 1}, Bool, Int64, Nothing, Int64, Array{Dates.DateFormat{S, T} where T<:Tuple where S, 1}, Array{Array{UInt8, 1}, 1}, Int64, Bool, Nothing, Nothing, Nothing, Int64, Bool, Nothing, Bool, Bool, Bool, Bool, Int64, Int64, Nothing})
+
+   precompile(Tuple{typeof(DLMReader.filereader), Base.GenericIOBuffer{Array{UInt8, 1}}})
+   precompile(Tuple{typeof(DLMReader.filereader), String})
+end

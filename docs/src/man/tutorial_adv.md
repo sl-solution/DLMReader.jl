@@ -85,7 +85,7 @@ Columns information
 │  15 │ mta_tax            │ identity │ Float64 │
 │  16 │ tip_amount         │ identity │ Int64   │
 │  17 │ tolls_amount       │ identity │ Int64   │
-│  18 │ total_amount       │ identity │ Float64 │
+│  18 │ total_amount \n    │ identity │ Float64 │
 └─────┴────────────────────┴──────────┴─────────┘
 ```
 
@@ -114,7 +114,7 @@ In the next step, we store the data types of the columns in an array and pass it
 ```julia
 julia> _tmp = content(taxi, output = true)[2];
 
-julia> alltypes = disallowmissing(_tmp[:, :eltype]);
+julia> alltypes = identity.(_tmp[:, :eltype]);
 
 julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'], 
                             types = alltypes, 
@@ -157,6 +157,8 @@ The `line_informat` keyword argument accepts a registered informat which is a fu
 
 > Note that the `line_informat` informat is called on each line of the input file, thus, use low level programming to avoid any allocation.
 
+> Note that the last column name has an extra '\n'. To fix it, user can call `rename!(taxi, "total_amount \n" => "total_amount")`.
+
 ```julia
 julia> function LINFMT!(x)
             replace!(x, ",,," => ", ,")
@@ -179,6 +181,7 @@ julia> taxi = filereader(taxi_file, linebreak = ['\r','\n'],
   20 │ CMT        2010-03-15T12:20:25  2010-03-15T12:26:38                1            0.9          -73.9983          40.7454          1                   0           -73.9954
                                                                                                                                                       8 columns and 17 rows omitted
 
+julia> rename!(taxi, "total_amount \n" => "total_amount")
 ```
 
 ## Dealing with String columns
