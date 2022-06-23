@@ -404,7 +404,7 @@ end
         while true
             cnt_read_bytes = readbytes!(f, buffer.data)
             if cnt_read_bytes == 0
-                return res
+                return cnt_read_bytes, buffer
             end
             cur_position = position(f)
 
