@@ -836,6 +836,7 @@ function parse_eachrow(problems::Vector{Bool}, ::Type{T}, x::Vector, buffer::Lin
                 for ptrs in informat
                     (new_lo, new_hi) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, new_lo, new_hi)
                 end
+                idx[i,j] = (new_lo, new_hi)
             end
             if char_buff !== nothing
                 charbuff = char_buff[Threads.threadid()]

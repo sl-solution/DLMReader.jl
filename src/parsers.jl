@@ -1,5 +1,5 @@
 all_integer_types = Union{Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64, UInt128}
-function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, df, ::Type{T}) where  T <: TimeType
+function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, df, ::Type{T})::Int where  T <: TimeType
     flag = 0
     if cc > nd
         val = nothing
@@ -27,7 +27,7 @@ function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int
 end
 
 
-function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, ::Type{T}; base::Int = 10) where T <: all_integer_types
+function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, ::Type{T}; base::Int = 10)::Int where T <: all_integer_types
     val = Base.tryparse_internal(T, lbuff, cc, nd, base, false)
     flag = 0
     if val === nothing
@@ -43,7 +43,7 @@ function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int
     end
     flag
 end
-function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::Int, ::Type{T}) where T <: Real
+function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::Int, ::Type{T})::Int where T <: Real
     # hasvalue, val = ccall(:jl_try_substrtod, Tuple{Bool, Float64},
     # (Ptr{UInt8},Csize_t,Csize_t), lbuff, cc-1, nd - cc +1)
     # related to DLMReader issue #5
@@ -81,7 +81,7 @@ end
 #     flag
 # end
 
-function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::Int, ::Type{BigFloat})
+function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::Int, ::Type{BigFloat})::Int
     newlo = cc
     newhi = nd
     for i in cc:nd
@@ -105,7 +105,7 @@ function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::
     end
 end
 
-function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})::Int
     l = nd - cc + 1
     cnt = 0
     for i in cc:nd
@@ -116,7 +116,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})
 
 end
 
-function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})
+function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})::Int
     newlo = cc
     newhi = nd
     for i in nd:-1:cc
@@ -128,7 +128,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})
 end
 
 
-function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})::Int
     flag = 0
     newlo = cc
     newhi = nd
@@ -158,7 +158,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Bool})
 
 end
 
-function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: InlineString
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T})::Int where T <: InlineString
     if cc>nd
         res[current_line] = missing
     else
@@ -173,7 +173,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{T}) where T <: Inl
 end
 
 
-function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) where T <: Characters
+function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T})::Int where T <: Characters
     if cc>nd
         res[current_line] = missing
     else
@@ -188,7 +188,7 @@ function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) whe
 end
 
 
-function buff_parser(res, buffer, cc, nd, current_line, ::Type{T}) where T <: UUID
+function buff_parser(res, buffer, cc, nd, current_line, ::Type{T})::Int where T <: UUID
     flag = 0
     if cc>nd
         res[current_line] = missing
@@ -209,7 +209,7 @@ function buff_parser(res, buffer, cc, nd, current_line, ::Type{T}) where T <: UU
 end
 
 
-function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T}) where T <: DT
+function buff_parser(res, lbuff, cc, nd, current_line, char_buff, ::Type{T})::Int where T <: DT
     if cc>nd
         nothing
     else

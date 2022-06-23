@@ -108,7 +108,7 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
     else # others are string
         flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line[], String)
     end
-    flag
+    flag, cc, en
 end
 
 
@@ -208,14 +208,14 @@ function _process_iobuff_parse!(res::Vector{<:AbstractVector},
                     end
                 end
                 
-                anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df,   dt_cnt, j, informat, selected_int_base, string_trim)
+                anything_is_wrong, cc, en = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df,   dt_cnt, j, informat, selected_int_base, string_trim)
 
                 if anything_is_wrong == 1
                     # we split track_problems to two components - now track_problems_1 and track_problems_2 are vector rather than any
                     change_true_tracker!(track_problems_1::BitVector, j)
                     # track_problems[1][j] = true
                     if current_loc_track_problems < 21
-                        change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, (new_lo == 0 ? field_start : new_lo), (new_hi == 0 ? dlm_pos - dlm_length : new_hi))
+                        change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, cc, en)
                         # track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
                         current_loc_track_problems += 1
                     end
@@ -235,11 +235,11 @@ function _process_iobuff_parse!(res::Vector{<:AbstractVector},
                     end
                 end
                 # dlm_pos doesn't contain dlm so it shouldn't be dlm_pos-1 like the non-fixed case
-                anything_is_wrong = parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, j, informat, selected_int_base, string_trim)
+                anything_is_wrong, cc, en = parse_data!(res, buffer, types, fixed[j].start + offset, dlm_pos, current_line, charbuff, char_cnt, df, dt_cnt, j, informat, selected_int_base, string_trim)
                 if anything_is_wrong == 1
                     change_true_tracker!(track_problems_1::BitVector, j)
                     if current_loc_track_problems < 21
-                        change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, (fixed[j].start + offset), (dlm_pos))
+                        change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, cc, en)
                         current_loc_track_problems += 1
                     end
                 end
@@ -458,13 +458,13 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
 
         dlm_pos == 0 ? dlm_pos = line_end + dlm_length : nothing
         
-        anything_is_wrong = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, j, informat, selected_int_base, string_trim)
+        anything_is_wrong, cc, en = parse_data!(res, buffer, types, new_lo == 0 ? field_start : new_lo, new_hi == 0 ? dlm_pos - dlm_length : new_hi, current_line, charbuff, char_cnt, df, dt_cnt, j, informat, selected_int_base, string_trim)
 
         if anything_is_wrong == 1
             # we split track_problems to two components - now track_problems_1 and track_problems_2 are vector rather than any
             change_true_tracker!(track_problems_1::BitVector, j)
             if current_loc_track_problems < 21
-                change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, (new_lo == 0 ? field_start : new_lo), (new_hi == 0 ? dlm_pos - dlm_length : new_hi))
+                change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, cc, en)
                 current_loc_track_problems += 1
             end
         end
