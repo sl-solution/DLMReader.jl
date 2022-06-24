@@ -57,6 +57,18 @@ Read a delimited file into `Julia`.
 * `threshold`: The file size threshold (in bytes) which specifies the minimum file size for switching to the high performance algorithm. By default it is set to 2^26.
 """
 function filereader(path::Union{AbstractString, IOBuffer}; opts...)
+    if path isa IOBuffer
+        if FILESIZE(path) == 0
+            return Dataset()
+        end
+    elseif isfile(path)
+        if FILESIZE(path) == 0
+            return Dataset()
+        end
+    else
+        throw(ArgumentError("path is not a valid source"))
+    end
+
     optsd = val_opts(opts)
 
     # dlm 
@@ -73,7 +85,7 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
         append!(linebreak, guess_eol_char(path))
     end
 
-    # if we have dlmstr we use a separate path
+    # dlmstr
     if haskey(optsd, :dlmstr)
         dlmstr = true
         dlm = collect(codeunits(optsd[:dlmstr]))::Vector{UInt8}
