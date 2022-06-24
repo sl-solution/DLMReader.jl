@@ -57,33 +57,12 @@ Read a delimited file into `Julia`.
 * `threshold`: The file size threshold (in bytes) which specifies the minimum file size for switching to the high performance algorithm. By default it is set to 2^26.
 """
 function filereader(path::Union{AbstractString, IOBuffer}; opts...)
-    if path isa IOBuffer
-        if FILESIZE(path) == 0
-            return Dataset()
-        end
-    elseif isfile(path)
-        if FILESIZE(path) == 0
-            return Dataset()
-        end
-    else
-        throw(ArgumentError("path is not a valid source"))
-    end
-
     optsd = val_opts(opts)
 
     # dlm 
     !all(isascii.(get(optsd, :delimiter, ','))) && throw(ArgumentError("delimiter must be ASCII"))
     dlm = UInt8[]
     append!(dlm, UInt8.(get(optsd, :delimiter, ',')))
-
-    #linebreak
-    !all(isascii.(get(optsd, :linebreak, '\n'))) && throw(ArgumentError("linebreak must be ASCII"))
-    linebreak = UInt8[]
-    if haskey(optsd, :linebreak)
-        append!(linebreak, UInt8.(get(optsd, :linebreak, '\n')))
-    else
-        append!(linebreak, guess_eol_char(path))
-    end
 
     # dlmstr
     if haskey(optsd, :dlmstr)
@@ -109,6 +88,13 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
     else
         header = true
         colnames = Symbol[]
+    end
+
+    #if both header and types are given, their length must be matched
+    if !isempty(colnames) && haskey(optsd, :types) && (optsd[:types] isa Vector)
+        if length(colnames) != length(optsd[:types])
+            throw(ArgumentError("number of column names and the number of columns are not matched"))
+        end
     end
 
     fixed = get(optsd, :fixed, Dict{Int,UnitRange{Int}}())::Dict{Int,UnitRange{Int}}
@@ -186,6 +172,28 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
         if @isdefined l_infmt
             throw(ArgumentError("`filereader` doesn't support `line_informat` when `multiple_obs = true`"))
         end
+    end
+
+    #TODO if input is empty, return an empty data set - is it needed?
+    if path isa IOBuffer
+        if FILESIZE(path) == 0
+            return Dataset()
+        end
+    elseif isfile(path)
+        if FILESIZE(path) == 0
+            return Dataset()
+        end
+    else
+        throw(ArgumentError("path is not a valid source"))
+    end
+
+    #linebreak
+    !all(isascii.(get(optsd, :linebreak, '\n'))) && throw(ArgumentError("linebreak must be ASCII"))
+    linebreak = UInt8[]
+    if haskey(optsd, :linebreak)
+        append!(linebreak, UInt8.(get(optsd, :linebreak, '\n')))
+    else
+        append!(linebreak, guess_eol_char(path))
     end
 
     # we must skipto
