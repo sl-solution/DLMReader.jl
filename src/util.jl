@@ -829,8 +829,8 @@ function parse_eachrow(problems::Vector{Bool}, ::Type{T}, x::Vector, buffer::Lin
         if idx[i, j][1] == 0
             x[i] =  missing
         else
-            new_lo = idx[i,j][1]
-            new_hi = idx[i,j][2]
+            new_lo::Int = idx[i,j][1]
+            new_hi::Int = idx[i,j][2]
             if informat !== nothing
                 # if informat !== nothing, it is a pointer
                 for ptrs in informat
@@ -894,8 +894,6 @@ end
     end
     track_problems_1, track_problems_2
 end
-
-
 
 function parse_eachrow_of_dataset!(outds::Dataset, types::Vector{DataType}, buffer::LineBuffer, res_idx::Matrix{Tuple{UInt32, UInt32}}, informat::Union{Nothing, Dict{Int, Vector{Ptr{Nothing}}}}, dtformat, char_buff::Vector{Vector{UInt8}}, int_bases::Union{Nothing, Dict{Int, Int}}, string_trim::Bool, threads::Bool, warn::Int, total_line_skipped::Int, multiple_obs::Bool)
     dt_cnt::Int = 1
