@@ -147,6 +147,8 @@ end
     ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String], multiple_obs=true, informat = Dict(1:5 .=> NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"')
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
 
+    ds = filereader(joinpath(dir, "test2.csv"), types = [Characters{1}, Characters{2}], multiple_obs = true, header = false)
+    @test ds == Dataset(AbstractVector[Union{Missing, Characters{1}}["a", "d", "g", "i", "l", "n"], Union{Missing, Characters{2}}["bc", "ef", "h", "jk", "m", "op"]], [:x1, :x2])
     # set threshold = 0 
     ds = filereader(IOBuffer("a,b\n1,2\n"), header = false, multiple_obs = true, types = [String, String], threshold = 0)
     @test ds == Dataset(x1=["a","1"], x2=["b","2"])
@@ -167,4 +169,8 @@ end
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
     ds = filereader(joinpath(dir, "test1.csv"), types = [Int32, Int32, Date, Float32, String], multiple_obs=true, informat = Dict(1:5 .=> NA!), header=[:x1, :x2, :x3, :x4, :x5], quotechar = '"', threshold = 0)
     @test ds == Dataset([Union{Missing, Int32}[12, 1, 2, missing], Union{Missing, Int32}[12, 2, 4, missing], Union{Missing, Date}[Date("2020-01-01"), Date("2012-01-02"), Date("2005-01-01"), Date("2005-01-01")], Union{Missing, Float32}[1.2f0, 2.3f0, 1.3f0, 1.3f0], Union{Missing, Characters{2}}["a1", "a2", "a3", missing]], [:x1, :x2, :x3, :x4, :x5])
+
+    ds = filereader(joinpath(dir, "test2.csv"), types = [Characters{1}, Characters{2}], multiple_obs = true, header = false, threshold = 0)
+    @test ds == Dataset(AbstractVector[Union{Missing, Characters{1}}["a", "d", "g", "i", "l", "n"], Union{Missing, Characters{2}}["bc", "ef", "h", "jk", "m", "op"]], [:x1, :x2])
+
 end

@@ -425,11 +425,12 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
 
     line_end = find_end_of_line(buffer.data, line_start, last_valid_buff, eol)
 
-    while true
+    # keep track of Characters and DateTime columns
+    char_cnt = 0
+    dt_cnt = 0
 
-        # keep track of Characters and DateTime columns
-        char_cnt = 0
-        dt_cnt = 0
+
+    while true
 
         if Characters_types !== nothing
             if in(j, Characters_types)
@@ -494,6 +495,8 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
             current_line[] += 1
             current_line[]> limit && return read_one_obs
             j = 1
+            char_cnt = 0
+            dt_cnt = 0
             any_problem_with_parsing = 0
         end
         if dlm_pos > line_end
