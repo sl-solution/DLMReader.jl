@@ -486,7 +486,10 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
         end
         j = j+1
         if j > n_cols
-            map(x->push!(x, missing), res)
+            # map(x->push!(x, missing), res)
+            for cols in 1:length(res)
+                push!(res[cols], missing)
+            end
             read_one_obs = false
             current_line[] += 1
             current_line[]> limit && return read_one_obs
@@ -550,7 +553,9 @@ function _process_iobuff_multiobs_no_parse!(res::Vector{Vector{Tuple{UInt32, UIn
         
         j = j+1
         if j > n_cols
-            map(x->push!(x, (0,0)), res)
+            for cols in 1:length(res)
+                push!(res[cols], (0,0))
+            end
             read_one_obs = false
             current_line[] += 1
             current_line[]> limit && return read_one_obs
