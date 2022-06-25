@@ -14,6 +14,8 @@ The package is shipped with some pre-registered `informat`s which are listed (ne
 
 Users can define their own informats, which is basically a function with one positional argument. The function must accept a special mutable string and returns its modified value (or returns a subset of it). To use the new defined function as `informat`, user must register it by calling the `register_informat` function.
 
+> Note that if the function definition is changed, `DLMReader` uses the new definition and user MUST re-register it to avoid extra allocation.
+
 ## Supported string manipulation functions
 
 The function used for informat must accept a special mutable string type and return it. Thus, user must only modify the input argument in-place. Currently, few string manipulation functions are optimised for this purpose - For small to medium size files, user can use any other functions, which support working with `AbstractString`, for manipulating the input argument: (in the following paragraph `x` is referring to the positional argument of the user defined informat)

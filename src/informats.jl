@@ -1,6 +1,25 @@
 global DLMReader_Registered_Informats = Dict{Symbol, Ptr{Nothing}}()
 
+"""
+    register_informat(f)
 
+Register function `f` as an informat for using in `filereader`.
+
+> The `filereader` function uses the latest definition of `f`, however, user must re-register the function `f` whenever it is modified to avoid allocation.
+
+# Examples
+
+```jldoctest
+julia> function new_infmt!(x)
+            replace!(x, "Y"=>"1")
+        end
+new_infmt! (generic function with 1 method)
+
+julia> register_informat(new_infmt!)
+[ Info: Informat new_infmt! has been registered
+
+```
+"""
 function register_informat(f; quiet = false, force = false)
     @assert Core.Compiler.return_type(f, Tuple{SUBSTRING}) == SUBSTRING "informat must return its input or a subset of its input"
     if !force
