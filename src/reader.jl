@@ -766,7 +766,7 @@ function detect_types(path::Union{AbstractString, IOBuffer},
     # one_extra column to keep the start and end of the line for warning reporting
     res = Matrix{Tuple{UInt32, UInt32}}(undef, rows_in, n_cols+1)
     # check that returned buffer has not been reused inside readfile_chunk_no_parse
-    @assert hi - lo + 1 < buffsize "the input file is very wide, you must increase the buffsize/lsize for detecting types, otherwise decreasing gussingrows might resolve the issue"
+    @assert hi - lo + 1 < buffsize "the input file is very wide, you must increase the buffsize/lsize for detecting types, otherwise decreasing guessingrows might resolve the issue"
     cnt_read_bytes, buffer = readfile_chunk_no_parse!(res, 1, path, n_cols, lo, hi, colnames, delimiter, linebreak, buffsize, colwidth, dlmstr, escapechar, quotechar, 0, false, ignorerepeated , false, limit, line_informat, total_line_skipped)
 
     if !isempty(dtformat)
