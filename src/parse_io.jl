@@ -213,10 +213,8 @@ function _process_iobuff_parse!(res::Vector{<:AbstractVector},
                 if anything_is_wrong == 1
                     # we split track_problems to two components - now track_problems_1 and track_problems_2 are vector rather than any
                     change_true_tracker!(track_problems_1::BitVector, j)
-                    # track_problems[1][j] = true
                     if current_loc_track_problems < 21
                         change_loc_tracker!(track_problems_2::Vector{UnitRange{Int}}, current_loc_track_problems, cc, en)
-                        # track_problems[2][current_loc_track_problems] = (new_lo == 0 ? field_start : new_lo):(new_hi == 0 ? dlm_pos - dlm_length : new_hi)
                         current_loc_track_problems += 1
                     end
                 end
@@ -487,7 +485,6 @@ function _process_iobuff_multiobs_parse!(res::Vector{<:AbstractVector},
         end
         j = j+1
         if j > n_cols
-            # map(x->push!(x, missing), res)
             for cols in 1:length(res)
                 push!(res[cols], missing)
             end

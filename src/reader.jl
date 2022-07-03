@@ -230,7 +230,7 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
     if header
         l_length, start_of_file = read_one_line(path, start_of_file+1, FILESIZE(path), linebreak)
     end
-    #by default, we switch to fast path when file size about 64MB or less
+    #by default, we switch to fast path when file size is about 64MB or less
     small_size = get(optsd, :threshold, 2^26)
     @assert small_size < 4294967295 "the `threshold` must be less than 4GB"
     if FILESIZE(path) - start_of_file + 1 < small_size
@@ -330,7 +330,7 @@ end
 
             if !eof(f) && cur_position < hi
                 if buffer.data[end] !== eol_last || buffer.data[end-eol_len+1] !== eol_first
-                    #this means the buffer is not ended with an eol char, so we move back in buffer to have complete line
+                    #this means the buffer is not ended with the eol char(s), so we move back to have a complete line
                     back_cnt = 0
                     for i in buffsize:-1:1
                         last_valid_buff = i
@@ -430,7 +430,6 @@ end
 
             if !eof(f) && cur_position < hi
                 if buffer.data[end] !== eol_last || buffer.data[end-eol_len+1] !== eol_first
-                    #this means the buffer is not ended with a eol char, so we move back into buffer to have complete line
                     back_cnt = 0
                     for i in buffsize:-1:1
                         last_valid_buff = i

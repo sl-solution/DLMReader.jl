@@ -67,7 +67,7 @@ Base.show(io::IO, ::MIME"text/plain", err::DLMERRORS_PARSE_ERROR) = show(IOConte
 Base.show(io::IO, ::MIME"text/plain", err::DLMERRORS_LINE) = show(IOContext(io, :limit => true), "text/plain", err.message)
 
 @noinline function PRINT_ERROR_TYPES_COLUMNS(x::Int, y::Int)::String
-    string("Number of columns ", x, " and number of column names ", y, " are not equal")
+    string("Number of columns ", x, " and number of column names ", y, " are not matched")
 end
 @noinline function PRINT_ERROR_LINEBREAK(linebreak::Vector{UInt8})::String
     string("It is difficult to reach end of lines, either linebreak (current value : ",  Char.(linebreak), ") is not detected properly or `lsize` and/or `buffsize` are too small.")
@@ -218,7 +218,7 @@ end
         end
     end
     CLOSE(f)
-    throw(ArgumentError("end of line is not detectable, set `linebreak` argument manually"))
+    throw(ArgumentError("end of line is not detectable, set the `linebreak` argument manually"))
 end
 
 
@@ -768,7 +768,7 @@ end
                     push!(colnames, Symbol("NONAME"*string(cnter)))
                     cnter += 1
                 else
-                    throw(ArgumentError("the column name inference is not valid, if the table is very wide, increase `buffsize` and `lsize`, otherwise, setting `header = false` or `emptycolname = true` may solve the issue."))
+                    throw(ArgumentError("the column name inference is not valid, if the file is very wide, increase `buffsize` and `lsize`, otherwise, setting `header = false` or `emptycolname = true` may resolve the issue."))
                 end
             else
                 newsub = STRIP!(_SUBSTRING_(buffer, res[1,i][1]:res[1,i][2]))
@@ -777,7 +777,7 @@ end
                         push!(colnames, Symbol("NONAME"*string(cnter)))
                         cnter += 1
                     else
-                        throw(ArgumentError("the column name inference is not valid, if the table is very wide, increase `buffsize` and `lsize`, otherwise, setting `header = false` or `emptycolname = true` may solve the issue."))
+                        throw(ArgumentError("the column name inference is not valid, if the file is very wide, increase `buffsize` and `lsize`, otherwise, setting `header = false` or `emptycolname = true` may resolve the issue."))
                     end
                 else
                     push!(colnames, Create_Symbol(newsub.string.data, newsub.lo, newsub.hi))
