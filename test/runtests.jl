@@ -186,7 +186,7 @@ end
     filewriter("_tmp.csv",ds, mapformats=true, delimiter=';', quotechar='"')
     @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], delimiter=';', quotechar='"'), ds,mapformats=true), all)|>all      
     filewriter("_tmp.csv",ds, mapformats=true, delimiter=[':',':'],quotechar='"')
-    @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], dlmstr="::"), ds,mapformats=true), all)|>all
+    @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], dlmstr="::", quotechar='"'), ds,mapformats=true), all)|>all
     #large data
     ds=Dataset(rand(1:100,1000,100),:auto)
     setformat!(ds,:x1=>f1_fmt,:x10=>f2_fmt)
