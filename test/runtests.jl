@@ -174,3 +174,28 @@ end
     @test ds == Dataset(AbstractVector[Union{Missing, Characters{1}}["a", "d", "g", "i", "l", "n"], Union{Missing, Characters{2}}["bc", "ef", "h", "jk", "m", "op"]], [:x1, :x2])
 
 end
+@testset "pull _ improve row_join! in IMD" begin
+    ds = Dataset(x=[1,2,3], y=[1.3,2.3,-100],z=["hello","world","!"])
+    f1_fmt(x)=iseven(x)
+    f2_fmt(x)=replace(string(x),"."=>",")
+    setformat!(ds,:x=>f1_fmt,:y=>f2_fmt)
+    filewriter("_tmp.csv",ds)
+    @test filereader("_tmp.csv") == ds
+    filewriter("_tmp.csv",ds, mapformats=true, delimiter=';')
+    @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], delimiter=';'), ds,mapformats=true), all)|>all
+    filewriter("_tmp.csv",ds, mapformats=true, delimiter=';', quotechar='"')
+    @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], delimiter=';', quotechar='"'), ds,mapformats=true), all)|>all      
+    filewriter("_tmp.csv",ds, mapformats=true, delimiter=[':',':'],quotechar='"')
+    @test byrow(compare(filereader("_tmp.csv",types=[Bool,String,String], dlmstr="::", quotechar='"'), ds,mapformats=true), all)|>all
+    #large data
+    ds=Dataset(rand(1:100,1000,100),:auto)
+    setformat!(ds,:x1=>f1_fmt,:x10=>f2_fmt)
+    filewriter("_tmp.csv",ds)
+    @test filereader("_tmp.csv")==ds
+    filewriter("_tmp.csv",ds,mapformats=true,delimiter=';')
+    @test byrow(compare(filereader("_tmp.csv",types=Dict(1=>Bool,10=>String),delimiter=';'),ds,mapformats=true),all)|>all
+    filewriter("_tmp.csv",ds,mapformats=true,delimiter=';',quotechar='"')
+    @test byrow(compare(filereader("_tmp.csv",types=Dict(1=>Bool,10=>String),delimiter=';',quotechar='"'),ds,mapformats=true),all)|>all        
+    filewriter("_tmp.csv",ds,mapformats=true,delimiter=[':',':'],quotechar='"')
+    @test byrow(compare(filereader("_tmp.csv",types=Dict(1=>Bool,10=>String),dlmstr="::", quotechar='"'),ds,mapformats=true),all)|>all        
+end
