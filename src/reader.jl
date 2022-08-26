@@ -549,7 +549,7 @@ function distribute_file_parse(path::Union{AbstractString, IOBuffer},
 
         # revised calculation - if limit is set
         if nt > 1 && last_chunk_to_read < nt
-            line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, hi[last_chunk_to_read], skip_bytes, nt, eol, eol_len, eol_last, eol_first, limit)
+            line_lo, line_hi, lo, hi, ns, last_chunk_to_read = dist_calc(f, path, hi[last_chunk_to_read], f_pos, nt, eol, eol_len, eol_last, eol_first, limit)
         end
 
         res = [allocatecol_for_res(types[i], 0) for i in 1:length(types)]
