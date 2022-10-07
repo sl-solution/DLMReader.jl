@@ -106,25 +106,25 @@ end
 function _resize_res_barrier!(res::Vector{<:AbstractVector}, types::Vector{DataType}, n::Int, threads::Bool)
     InMemoryDatasets.@_threadsfor threads for j in 1:length(res)
         @inbounds if types[j] === Int64
-            _our_resize!(res[j]::Vector{Union{Missing, Int64}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Int64}}, n)
         elseif types[j] === Float64
-            _our_resize!(res[j]::Vector{Union{Missing, Float64}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Float64}}, n)
         elseif types[j] === Bool
-            _our_resize!(res[j]::Vector{Union{Missing, Bool}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Bool}}, n)
         elseif types[j] === Date
-            _our_resize!(res[j]::Vector{Union{Missing, Date}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Date}}, n)
         elseif types[j] === DateTime
-            _our_resize!(res[j]::Vector{Union{Missing, DateTime}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,DateTime}}, n)
         elseif types[j] === String
-            _our_resize!(res[j]::Vector{Union{Missing, String}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,String}}, n)
         elseif types[j] === Int32
-            _our_resize!(res[j]::Vector{Union{Missing, Int32}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Int32}}, n)
         elseif types[j] === Float32
-            _our_resize!(res[j]::Vector{Union{Missing, Float32}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Float32}}, n)
         elseif types[j] === Int8
-            _our_resize!(res[j]::Vector{Union{Missing, Int8}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Int8}}, n)
         elseif types[j] === Int16
-            _our_resize!(res[j]::Vector{Union{Missing, Int16}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Int16}}, n)
         elseif types[j] === String1
             _our_resize!(res[j]::Vector{Union{Missing,String1}}, n)
         elseif types[j] === String3
@@ -166,7 +166,7 @@ function _resize_res_barrier!(res::Vector{<:AbstractVector}, types::Vector{DataT
         elseif types[j] === Characters{16}
             _our_resize!(res[j]::Vector{Union{Missing,Characters{16}}}, n)
         elseif types[j] === Time
-            _our_resize!(res[j]::Vector{Union{Missing, Time}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Time}}, n)
         elseif types[j] === String31
             _our_resize!(res[j]::Vector{Union{Missing,String31}}, n)
         elseif types[j] === String63
@@ -176,23 +176,25 @@ function _resize_res_barrier!(res::Vector{<:AbstractVector}, types::Vector{DataT
         elseif types[j] === String255
             _our_resize!(res[j]::Vector{Union{Missing,String255}}, n)
         elseif types[j] === UInt8
-            _our_resize!(res[j]::Vector{Union{Missing, UInt8}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UInt8}}, n)
         elseif types[j] === UInt16
-            _our_resize!(res[j]::Vector{Union{Missing, UInt16}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UInt16}}, n)
         elseif types[j] === UInt32
-            _our_resize!(res[j]::Vector{Union{Missing, UInt32}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UInt32}}, n)
         elseif types[j] === UInt64
-            _our_resize!(res[j]::Vector{Union{Missing, UInt64}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UInt64}}, n)
         elseif types[j] === Int128
-            _our_resize!(res[j]::Vector{Union{Missing, Int128}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,Int128}}, n)
         elseif types[j] === UInt128
-            _our_resize!(res[j]::Vector{Union{Missing, UInt128}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UInt128}}, n)
         elseif types[j] === BigFloat
-            _our_resize!(res[j]::Vector{Union{Missing, BigFloat}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,BigFloat}}, n)
         elseif types[j] === UUID
-            _our_resize!(res[j]::Vector{Union{Missing, UUID}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,UUID}}, n)
+        elseif types[j] === Symbol
+            _our_resize!(res[j]::Vector{Union{Missing,Symbol}}, n)
         else # others are string
-            _our_resize!(res[j]::Vector{Union{Missing, String}}, n)
+            _our_resize!(res[j]::Vector{Union{Missing,String}}, n)
         end
     end
 end

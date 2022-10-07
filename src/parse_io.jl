@@ -16,37 +16,37 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
     end
     # any new type added here must also be added to _resize_res_barrier! in util.jl (the function allocates the result)
     @inbounds if types[j] === Int64
-       flag = buff_parser(res[j]::Vector{Union{Missing, Int64}}, buffer, cc, en, current_line[], Int64; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Int64}}, buffer, cc, en, current_line[], Int64; base=int_bases)
     elseif types[j] === Float64
-       flag = buff_parser(res[j]::Vector{Union{Missing, Float64}}, buffer.data, cc, en, current_line[], Float64)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Float64}}, buffer.data, cc, en, current_line[], Float64)
     elseif types[j] === Bool
-        flag = buff_parser(res[j]::Vector{Union{Missing, Bool}}, buffer, cc, en, current_line[], Bool)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Bool}}, buffer, cc, en, current_line[], Bool)
     elseif types[j] === Date
-        flag = buff_parser(res[j]::Vector{Union{Missing, Date}}, buffer, cc, en, current_line[], df[dt_cnt], Date)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Date}}, buffer, cc, en, current_line[], df[dt_cnt], Date)
     elseif types[j] === DateTime
-        flag = buff_parser(res[j]::Vector{Union{Missing, DateTime}}, buffer, cc, en, current_line[], df[dt_cnt], DateTime)
+        flag = buff_parser(res[j]::Vector{Union{Missing,DateTime}}, buffer, cc, en, current_line[], df[dt_cnt], DateTime)
     elseif types[j] === String
         if string_trim
-            flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line[], string_trim, String)
+            flag = buff_parser(res[j]::Vector{Union{Missing,String}}, buffer.data, cc, en, current_line[], string_trim, String)
         else
-            flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line[], String)
+            flag = buff_parser(res[j]::Vector{Union{Missing,String}}, buffer.data, cc, en, current_line[], String)
         end
     elseif types[j] === Int32
-        flag = buff_parser(res[j]::Vector{Union{Missing, Int32}}, buffer, cc, en, current_line[], Int32; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Int32}}, buffer, cc, en, current_line[], Int32; base=int_bases)
     elseif types[j] === Float32
-        flag = buff_parser(res[j]::Vector{Union{Missing, Float32}}, buffer.data, cc, en, current_line[], Float32)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Float32}}, buffer.data, cc, en, current_line[], Float32)
     elseif types[j] === Int8
-        flag = buff_parser(res[j]::Vector{Union{Missing, Int8}}, buffer, cc, en, current_line[], Int8; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Int8}}, buffer, cc, en, current_line[], Int8; base=int_bases)
     elseif types[j] === Int16
-        flag = buff_parser(res[j]::Vector{Union{Missing, Int16}}, buffer, cc, en, current_line[], Int16; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Int16}}, buffer, cc, en, current_line[], Int16; base=int_bases)
     elseif types[j] === String1
-        flag = buff_parser(res[j]::Vector{Union{Missing,String1}}, buffer.data, cc, en, current_line[],String1)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String1}}, buffer.data, cc, en, current_line[], String1)
     elseif types[j] === String3
-        flag = buff_parser(res[j]::Vector{Union{Missing,String3}}, buffer.data, cc, en, current_line[],String3)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String3}}, buffer.data, cc, en, current_line[], String3)
     elseif types[j] === String7
-        flag = buff_parser(res[j]::Vector{Union{Missing,String7}}, buffer.data, cc, en, current_line[],String7)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String7}}, buffer.data, cc, en, current_line[], String7)
     elseif types[j] === String15
-        flag = buff_parser(res[j]::Vector{Union{Missing,String15}}, buffer.data, cc, en, current_line[],String15)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String15}}, buffer.data, cc, en, current_line[], String15)
     elseif types[j] === Characters{3}
         flag = buff_parser(res[j]::Vector{Union{Missing,Characters{3}}}, buffer.data, cc, en, current_line[], char_buff[char_cnt]::Vector{UInt8}, Characters{3})
     elseif types[j] === Characters{5}
@@ -80,33 +80,39 @@ function parse_data!(res, buffer, types, lo::Int, hi::Int, current_line, char_bu
     elseif types[j] === Characters{16}
         flag = buff_parser(res[j]::Vector{Union{Missing,Characters{16}}}, buffer.data, cc, en, current_line[], char_buff[char_cnt]::Vector{UInt8}, Characters{16})
     elseif types[j] === Time
-        flag = buff_parser(res[j]::Vector{Union{Missing, Time}}, buffer, cc, en, current_line[], df[dt_cnt], Time)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Time}}, buffer, cc, en, current_line[], df[dt_cnt], Time)
     elseif types[j] === String31
-        flag = buff_parser(res[j]::Vector{Union{Missing,String31}}, buffer.data, cc, en, current_line[],String31)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String31}}, buffer.data, cc, en, current_line[], String31)
     elseif types[j] === String63
-        flag = buff_parser(res[j]::Vector{Union{Missing,String63}}, buffer.data, cc, en, current_line[],String63)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String63}}, buffer.data, cc, en, current_line[], String63)
     elseif types[j] === String127
-        flag = buff_parser(res[j]::Vector{Union{Missing,String127}}, buffer.data, cc, en, current_line[],String127)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String127}}, buffer.data, cc, en, current_line[], String127)
     elseif types[j] === String255
-        flag = buff_parser(res[j]::Vector{Union{Missing,String255}}, buffer.data, cc, en, current_line[],String255)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String255}}, buffer.data, cc, en, current_line[], String255)
     elseif types[j] === UInt8
-        flag = buff_parser(res[j]::Vector{Union{Missing, UInt8}}, buffer, cc, en, current_line[], UInt8; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UInt8}}, buffer, cc, en, current_line[], UInt8; base=int_bases)
     elseif types[j] === UInt16
-        flag = buff_parser(res[j]::Vector{Union{Missing, UInt16}}, buffer, cc, en, current_line[], UInt16; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UInt16}}, buffer, cc, en, current_line[], UInt16; base=int_bases)
     elseif types[j] === UInt32
-        flag = buff_parser(res[j]::Vector{Union{Missing, UInt32}}, buffer, cc, en, current_line[], UInt32; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UInt32}}, buffer, cc, en, current_line[], UInt32; base=int_bases)
     elseif types[j] === UInt64
-        flag = buff_parser(res[j]::Vector{Union{Missing, UInt64}}, buffer, cc, en, current_line[], UInt64; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UInt64}}, buffer, cc, en, current_line[], UInt64; base=int_bases)
     elseif types[j] === Int128
-        flag = buff_parser(res[j]::Vector{Union{Missing, Int128}}, buffer, cc, en, current_line[], Int128; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,Int128}}, buffer, cc, en, current_line[], Int128; base=int_bases)
     elseif types[j] === UInt128
-        flag = buff_parser(res[j]::Vector{Union{Missing, UInt128}}, buffer, cc, en, current_line[], UInt128; base = int_bases)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UInt128}}, buffer, cc, en, current_line[], UInt128; base=int_bases)
     elseif types[j] === BigFloat
-        flag = buff_parser(res[j]::Vector{Union{Missing, BigFloat}}, buffer, cc, en, current_line[], BigFloat)
+        flag = buff_parser(res[j]::Vector{Union{Missing,BigFloat}}, buffer, cc, en, current_line[], BigFloat)
     elseif types[j] === UUID
-        flag = buff_parser(res[j]::Vector{Union{Missing, UUID}}, buffer, cc, en, current_line[], UUID)
+        flag = buff_parser(res[j]::Vector{Union{Missing,UUID}}, buffer, cc, en, current_line[], UUID)
+    elseif types[j] === Symbol
+        if string_trim
+            flag = buff_parser(res[j]::Vector{Union{Missing,Symbol}}, buffer.data, cc, en, current_line[], string_trim, Symbol)
+        else
+            flag = buff_parser(res[j]::Vector{Union{Missing,Symbol}}, buffer.data, cc, en, current_line[], Symbol)
+        end
     else # others are string
-        flag = buff_parser(res[j]::Vector{Union{Missing, String}}, buffer.data, cc, en, current_line[], String)
+        flag = buff_parser(res[j]::Vector{Union{Missing,String}}, buffer.data, cc, en, current_line[], String)
     end
     flag, cc, en
 end

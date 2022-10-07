@@ -115,6 +115,22 @@ function buff_parser(res, lbuff, cc, nd, current_line, ::Type{String})::Int
     return 0
 
 end
+function buff_parser(res, lbuff, cc, nd, current_line, ::Type{Symbol})::Int
+    l = nd - cc + 1
+    cnt = 0
+    for i in cc:nd
+        cnt += lbuff[i] === 0x20
+    end
+    l == 0 || l == cnt ? res[current_line] = missing : res[current_line] = __symbol(lbuff, cc, l)
+    return 0
+
+end
+
+function __symbol(lbuff, cc, l)
+    return ccall(:jl_symbol_n, Ref{Symbol}, (Ptr{UInt8}, Int),
+        ccall(:jl_array_ptr, Ptr{UInt8}, (Any,), pointer(lbuff, cc)),
+        Int(l))
+end
 
 function buff_parser(res, lbuff, cc, nd, current_line, trim, ::Type{String})::Int
     newlo = cc
@@ -334,6 +350,35 @@ function buff_parser_ind(problems, p_idx, lbuff, cc, nd, df, charbuff, base, tri
             res = missing
         else
             res = unsafe_string(pointer(lbuff.data, cc), l)
+        end
+    end
+    problems[p_idx] |= false
+    res
+end
+
+function buff_parser_ind(problems, p_idx, lbuff, cc, nd, df, charbuff, base, trim, ::Type{Symbol})
+    if trim
+        newlo = cc
+        newhi = nd
+        for i in nd:-1:cc
+            lbuff.data[i] == 0x20 ? newhi -= 1 : break
+        end
+        l = newhi - newlo + 1
+        if l == 0
+            res = missing
+        else
+            res = __symbol(lbuff.data, cc, l)
+        end
+    else
+        l = nd - cc + 1
+        cnt = 0
+        for i in cc:nd
+            cnt += lbuff.data[i] === 0x20
+        end
+        if l == 0 || l == cnt
+            res = missing
+        else
+            res = __symbol(lbuff.data, cc, l)
         end
     end
     problems[p_idx] |= false

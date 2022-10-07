@@ -1,7 +1,7 @@
 # constant variables
 const number_of_errors_happen_so_far = Threads.Atomic{Int}(0)
 
-const supported_types = Set{DataType}([Bool, Int8, Int16, Int32, Int64, Int8, UInt8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1}, Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID])
+const supported_types = Set{DataType}([Bool, Int8, Int16, Int32, Int64, Int8, UInt8, UInt16, UInt32, UInt64, Float32, Float64, Int128, UInt128, BigFloat, String1, String3, String7, String15, String31, String63, String127, String255, InlineString1, InlineString3, InlineString7, InlineString15, InlineString31, InlineString63, InlineString127, InlineString255, Characters{1}, Characters{2}, Characters{3}, Characters{4}, Characters{5}, Characters{6}, Characters{7}, Characters{8}, Characters{9}, Characters{10}, Characters{11}, Characters{12}, Characters{13}, Characters{14}, Characters{15}, Characters{16}, TimeType, DateTime, Date, Time, String, UUID, Symbol])
 
 const supported_keywords = Symbol[:types, :delimiter, :linebreak, :header, :threads, :guessingrows, :fixed, :buffsize, :quotechar, :escapechar, :dtformat, :dlmstr, :lsize, :informat, :warn, :eolwarn, :emptycolname, :int_base, :string_trim, :makeunique, :ignorerepeated, :multiple_obs, :skipto, :limit, :line_informat, :threshold]
 
@@ -206,7 +206,7 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
       types = detect_types(path, start_of_file, FILESIZE(path), get(optsd, :types, Dict{Int, DataType}()), dlm, linebreak, header, colnames, guessingrows, fixed, dtformat, dlmstr, lsize, buffsize, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, ignorerepeated, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
     end
 
-    @assert all(types .∈ Ref(supported_types)) "DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters{1 - 16}, TimeType, String, InlineString, UUID"
+    @assert all(types .∈ Ref(supported_types)) "DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters{1 - 16}, TimeType, String, InlineString, UUID, Symbol"
 
     if !isempty(fixed)
         colwidth = Vector{UnitRange{Int}}(undef, length(types))
