@@ -150,7 +150,9 @@ function filewriter(path::AbstractString, ds::AbstractDataset; delimiter::Union{
         cur_pos = Vector{Int}(undef, cs)
         lbuff = Vector{UInt8}(undef, lsize*cs)
         nrow_buff, sizeof(buff), sizeof(cur_pos), sizeof(lbuff)
-        WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delimiter, quotechar, threads)
+        if !isempty(ds) # if ds is empty we should return
+            WRITE_CHUNK(buff, cur_pos, lbuff, f, ds, n, ff, delimiter, quotechar, threads)
+        end
     catch e
         close(f)
         rethrow(e)
