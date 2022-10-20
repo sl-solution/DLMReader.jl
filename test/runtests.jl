@@ -204,7 +204,7 @@ end
        ds = Dataset(x=[],y=[])
        filewriter(tempfile, ds)
        @test filereader(tempfile) == ds
-       filewriter(tempfile, ds, quoatechar='"')
+       filewriter(tempfile, ds, quotechar='"')
        @test filereader(tempfile, quotechar = '"') == ds
        ds = Dataset()
        filewriter(tempname, ds)
