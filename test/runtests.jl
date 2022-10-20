@@ -207,6 +207,6 @@ end
        filewriter(tempfile, ds, quotechar='"')
        @test filereader(tempfile, quotechar = '"') == ds
        ds = Dataset()
-       filewriter(tempname, ds)
-       @test filereader(tempname)==ds
+       filewriter(tempfile, ds)
+       @test filereader(tempfile)==ds
  end
