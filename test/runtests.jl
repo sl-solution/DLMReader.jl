@@ -199,3 +199,14 @@ end
     filewriter("_tmp.csv",ds,mapformats=true,delimiter=[':',':'],quotechar='"')
     @test byrow(compare(filereader("_tmp.csv",types=Dict(1=>Bool,10=>String),dlmstr="::", quotechar='"'),ds,mapformats=true),all)|>all        
 end
+@testset "pull handle writing empty ds" begin
+       tempfile=tempname()
+       ds = Dataset(x=[],y=[])
+       filewriter(tempfile, ds)
+       @test filereader(tempfile) == ds
+       filewriter(tempfile, ds, quotechar='"')
+       @test filereader(tempfile, quotechar = '"') == ds
+       ds = Dataset()
+       filewriter(tempfile, ds)
+       @test filereader(tempfile)==ds
+ end
