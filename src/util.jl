@@ -217,6 +217,7 @@ end
                 CLOSE(f)
                 return [LF]
             # we must make sure \r\n is not trapped here
+            #FIXME when \r is the only character in the file we cannot detect linebreak
             elseif !(a[i] in (CR, LF)) && i>1 && a[i-1] == CR
                 CLOSE(f)
                 return [CR]
