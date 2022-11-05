@@ -216,6 +216,9 @@ end
             elseif a[i] == LF
                 CLOSE(f)
                 return [LF]
+            elseif a[i] == CR
+                CLOSE(f)
+                return [CR]
             end
         end
     end
