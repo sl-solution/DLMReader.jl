@@ -216,7 +216,8 @@ end
             elseif a[i] == LF
                 CLOSE(f)
                 return [LF]
-            elseif a[i] == CR
+            # we must make sure \r\n is not trapped here
+            elseif !(a[i] in (CR, LF)) && i>1 && a[i-1] == CR
                 CLOSE(f)
                 return [CR]
             end
