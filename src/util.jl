@@ -207,9 +207,11 @@ end
     CR = UInt8('\r')
 
     a = Vector{UInt8}(undef, 8192)
+    current_loc = 0
     while !eof(f)
         nb = readbytes!(f, a)
         for i in 1:nb
+            current_loc = i
             if a[i] == LF && i>1 && a[i-1] == CR
                 CLOSE(f)
                 return [CR, LF]
@@ -217,12 +219,16 @@ end
                 CLOSE(f)
                 return [LF]
             # we must make sure \r\n is not trapped here
-            #FIXME when \r is the only character in the file we cannot detect linebreak
             elseif !(a[i] in (CR, LF)) && i>1 && a[i-1] == CR
                 CLOSE(f)
                 return [CR]
             end
         end
+    end
+    #if \r is the last character and we could not detect it as linebreak, we can detect it here
+    if a[current_loc] == CR
+        CLOSE(f)
+        return [CR]
     end
     CLOSE(f)
     throw(ArgumentError("end of line is not detectable, set the `linebreak` argument manually"))
