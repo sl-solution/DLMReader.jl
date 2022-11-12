@@ -813,7 +813,7 @@ _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateForma
 @noinline function allocate_charbuff_df(types::Vector{DataType}, dtformat::Dict{Int, <:DateFormat}, fixed_dtformat)
     charbuff = Vector{UInt8}[]
     if !isempty(dtformat)
-        dtfmt = Vector{valtype(dtformat)}()
+        dtfmt = Vector{DateFormat}()
     else
         dtfmt = Vector{typeof(_todate(fixed_dtformat))}()
     end
