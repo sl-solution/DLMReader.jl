@@ -17,11 +17,7 @@ _STRING_L(x::AbstractString) = ncodeunits(x)
 _STRING_L(x) = ncodeunits(string(x))
 _STRING_L(::Missing) = 0
 function _string_size(x, f, threads, ::Type{T}) where T <: Any
-    if threads
-        InMemoryDatasets.hp_maximum(_STRING_L∘f, x)
-    else
-        InMemoryDatasets.stat_maximum(_STRING_L∘f, x)
-    end
+    maximum(_STRING_L∘f, x)
 end
 
 
