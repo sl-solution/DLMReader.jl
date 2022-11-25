@@ -17,7 +17,8 @@ _STRING_L(x::AbstractString) = ncodeunits(x)
 _STRING_L(x) = ncodeunits(string(x))
 _STRING_L(::Missing) = 0
 function _string_size(x, f, threads, ::Type{T}) where T <: Any
-    maximum(_STRING_L∘f, x)
+    # in the case of Any we need to manually calculate the maximim length
+    mapreduce(_STRING_L∘f, max, skipmissing(x), init=0)
 end
 
 
