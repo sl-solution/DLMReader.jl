@@ -16,10 +16,16 @@ _string_size(x, f, threads, ::Type{T}) where T <: Characters{N} where N = N
 _STRING_L(x::AbstractString) = ncodeunits(x)
 _STRING_L(x) = ncodeunits(string(x))
 _STRING_L(::Missing) = 0
-function _string_size(x, f, threads, ::Type{T}) where T <: Any
+function _string_size(x, f, threads, ::Type{T}) where {T}
     # in the case of Any we need to manually calculate the maximim length
-    mapreduce(_STRING_L∘f, max, skipmissing(x), init=0)
+    mapreduce(_STRING_L ∘ f, max, skipmissing(x), init=0)
 end
+# fix a bug that cause "ambiguous error" when a column is of type Missing alone
+function _string_size(x, f, threads, ::Type{Union{}})
+    # in the case of Any we need to manually calculate the maximim length
+    mapreduce(_STRING_L ∘ f, max, skipmissing(x), init=0)
+end
+
 
 
 
