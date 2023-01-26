@@ -203,7 +203,7 @@ function filereader(path::Union{AbstractString, IOBuffer}; opts...)
     if haskey(optsd, :types) && (optsd[:types] isa Vector)
         types = optsd[:types]
     else   
-      types = detect_types(path, start_of_file, FILESIZE(path), get(optsd, :types, Dict{Int, DataType}()), dlm, linebreak, header, colnames, guessingrows, fixed, dtformat, dlmstr, lsize, buffsize, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, ignorerepeated, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
+      types = detect_types(path, start_of_file, FILESIZE(path), get(optsd, :types, Dict{Int, DataType}()), dlm, linebreak, header, colnames, guessingrows, fixed, dtformat, int_base, dlmstr, lsize, buffsize, informat, haskey(optsd, :quotechar) ? escapechar : nothing, haskey(optsd, :quotechar) ? quotechar : nothing, ignorerepeated, skipto, limit, haskey(optsd, :line_informat) ? l_infmt : nothing)
     end
 
     @assert all(types .∈ Ref(supported_types)) "DLMReaser only supports the following types(and their Subtypes): Bool, Integers, Floats, BigFloat, Characters{1 - 16}, TimeType, String, InlineString, UUID, Symbol"
@@ -661,6 +661,7 @@ function detect_types(path::Union{AbstractString, IOBuffer},
     guessingrows::Int,
     fixed::Union{Nothing, Dict{Int, UnitRange{Int}}},
     dtformat::Dict{Int, <:DateFormat},
+    int_base::Union{Nothing, Dict{Int, Int}},
     dlmstr::Bool,
     lsize::Int,
     buffsize::Int,
@@ -781,6 +782,11 @@ function detect_types(path::Union{AbstractString, IOBuffer},
             else
                 throw(ArgumentError("the date time format for column $(j) is not valid"))
             end
+        end
+    end
+    if int_base !== nothing
+        for (j, val) in int_base
+            outtypes[j] = Int
         end
     end
     for j in 1:n_cols
