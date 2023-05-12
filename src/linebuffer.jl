@@ -123,6 +123,7 @@ function remove!(s::SUBSTRING, o::String)
     hi = s.hi
     i = lo
     idx = lo
+    lo>hi && return s
     while true
         if isequal(_SUBSTRING_(s.string, i:i+o_c_l-1), o)
             i += o_c_l
