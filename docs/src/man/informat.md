@@ -5,8 +5,8 @@ The `DLMReader` package uses `informat` to call a special type of functions on r
 The package is shipped with some pre-registered `informat`s which are listed (new informats may be added to future releases) below:
 
 * `STRIP!`: Remove leading and trailing blanks
-* `COMMA`: Remove `$`, and `,`(thousands separators) from the numbers
-* `COMMAX`: Treat `,` as decimal point, and removes `€`, and `.` (thousands separators) from numbers
+* `COMMA!`: Remove `$`, and `,`(thousands separators) from the numbers
+* `COMMAX!`: Treat `,` as decimal point, and removes `€`, and `.` (thousands separators) from numbers
 * `NA!`: Treat `NA`, `na`, `Na`, `nA` as missing
 * `BOOL!`: Convert any form of `True` and `False` to `1` and `0`, respectively
 * `ACC!`: Treat numbers in parentheses (Accounting format) as negative values, i.e. it replaces `(` with `-` and `)` with blank.
