@@ -49,5 +49,8 @@ include("writer.jl")
 
 # needs more works
 include("precompile.jl")
+if VERSION >= v"1.9.0" 
+    DLMReader.warmup()
+end
 
 end
