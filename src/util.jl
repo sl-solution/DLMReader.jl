@@ -838,26 +838,51 @@ _todate(::Any) = throw(ArgumentError("DateFormat must be a string or a DateForma
 end
 
 function parse_eachrow(problems::Vector{Bool}, ::Type{T}, x::Vector, buffer::LineBuffer, idx::Matrix{Tuple{UInt32, UInt32}}, j::Int, informat::Union{Nothing, Vector{Ptr{Nothing}}}, df, char_buff, int_bases::Int, string_trim::Bool, threads::Bool) where T
-    InMemoryDatasets.@_threadsfor threads for i in 1:length(x)
-        if idx[i, j][1] == 0
-            x[i] =  missing
-        else
-            new_lo::Int = idx[i,j][1]
-            new_hi::Int = idx[i,j][2]
-            if informat !== nothing
-                # if informat !== nothing, it is a pointer
-                for ptrs in informat
-                    (new_lo, new_hi) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, new_lo, new_hi)
-                end
-                idx[i,j] = (new_lo, new_hi)
-            end
-            if char_buff !== nothing
-                charbuff = char_buff[Threads.threadid()]
+    if threads
+        Threads.@threads :static for i in 1:length(x)
+            if idx[i, j][1] == 0
+                x[i] =  missing
             else
-                charbuff = nothing
-            end
+                new_lo::Int = idx[i,j][1]
+                new_hi::Int = idx[i,j][2]
+                if informat !== nothing
+                    # if informat !== nothing, it is a pointer
+                    for ptrs in informat
+                        (new_lo, new_hi) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, new_lo, new_hi)
+                    end
+                    idx[i,j] = (new_lo, new_hi)
+                end
+                if char_buff !== nothing
+                    charbuff = char_buff[Threads.threadid()]
+                else
+                    charbuff = nothing
+                end
 
-            x[i] = buff_parser_ind(problems, i, buffer, Int(new_lo), Int(new_hi), df, charbuff, int_bases, string_trim, T)
+                x[i] = buff_parser_ind(problems, i, buffer, Int(new_lo), Int(new_hi), df, charbuff, int_bases, string_trim, T)
+            end
+        end
+    else
+        for i in 1:length(x)
+            if idx[i, j][1] == 0
+                x[i] =  missing
+            else
+                new_lo::Int = idx[i,j][1]
+                new_hi::Int = idx[i,j][2]
+                if informat !== nothing
+                    # if informat !== nothing, it is a pointer
+                    for ptrs in informat
+                        (new_lo, new_hi) = ccall(ptrs, Tuple{Int, Int}, (Vector{UInt8}, Int, Int), buffer.data, new_lo, new_hi)
+                    end
+                    idx[i,j] = (new_lo, new_hi)
+                end
+                if char_buff !== nothing
+                    charbuff = char_buff[Threads.threadid()]
+                else
+                    charbuff = nothing
+                end
+
+                x[i] = buff_parser_ind(problems, i, buffer, Int(new_lo), Int(new_hi), df, charbuff, int_bases, string_trim, T)
+            end
         end
     end
     nothing
