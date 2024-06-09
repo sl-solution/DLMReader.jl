@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced · DLMReader</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DLMReader</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Introduction</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../tutorial_basic/">Basic</a></li><li class="is-active"><a class="tocitem" href>Advanced</a><ul class="internal"><li><a class="tocitem" href="#Reading-the-yellow-taxi-file"><span>Reading the yellow taxi file</span></a></li><li><a class="tocitem" href="#Passing-data-types"><span>Passing data types</span></a></li><li><a class="tocitem" href="#Examining-the-warnings"><span>Examining the warnings</span></a></li><li><a class="tocitem" href="#Dealing-with-String-columns"><span>Dealing with String columns</span></a></li></ul></li></ul></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../read/">Reading and Writing</a></li><li><a class="tocitem" href="../informat/">Informats</a></li></ul></li><li><a class="tocitem" href="../gallery/">Gallery</a></li><li><a class="tocitem" href="../performance/">Performance Tips</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorial</a></li><li class="is-active"><a href>Advanced</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/sl-solution/DLMReader.jl/blob/main/docs/src/man/tutorial_adv.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial-Advanced"><a class="docs-heading-anchor" href="#Tutorial-Advanced">Tutorial - Advanced</a><a id="Tutorial-Advanced-1"></a><a class="docs-heading-anchor-permalink" href="#Tutorial-Advanced" title="Permalink"></a></h1><p>This section provides an advanced introduction for using the <code>DLMReader</code> package to read a delimited file into <code>Julia</code>. To start using the package enter the following expression in a <code>Julia</code> session,</p><pre><code class="language-julia hljs">julia&gt; using DLMReader</code></pre><blockquote><p>If you have not installed the package yet, you will be prompt to do it so.</p></blockquote><h2 id="Reading-the-yellow-taxi-file"><a class="docs-heading-anchor" href="#Reading-the-yellow-taxi-file">Reading the yellow taxi file</a><a id="Reading-the-yellow-taxi-file-1"></a><a class="docs-heading-anchor-permalink" href="#Reading-the-yellow-taxi-file" title="Permalink"></a></h2><p>The <code>yellow_subset.csv</code> file is a small subset of taxi movements in New York city in 2010. </p><pre><code class="language-julia hljs">julia&gt; taxi_file = joinpath(dirname(pathof(DLMReader)),
+                                &quot;..&quot;, &quot;docs&quot;, &quot;src&quot;, &quot;assets&quot;, &quot;yellow_subset.csv&quot;
+                            );</code></pre><p>In this tutorial we use the <code>filereader</code> function to read this file into <code>Julia</code>. At the first attempt we directly use the <code>filereader</code> function to read this data into <code>Julia</code>, however, since the file can be huge we only limit our parsing to few observations (examining the structure of the input file).</p><pre><code class="language-julia hljs">julia&gt; taxi = filereader(taxi_file, limit = 4)
+┌ Info: There might be less observations in the input file at line 2 (observation 1) than the number of columns in the output dataset.
+└  
+4×18 Dataset
+ Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
+     │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
+     │ String?    String?              String?              Int64?           Float64?       Float64?          Float64?         Int64?     Int64?              Float64?            ⋯
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ \r         missing              missing                      missing      missing        missing          missing         missing             missing       missing        ⋯
+   2 │ CMT        2010-03-15 15:29:46  2010-03-15 15:34:09                1            0.8          -74.0047          40.7343          1                   0           -73.9936
+   3 │ CMT        2010-03-15 11:44:31  2010-03-15 11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
+   4 │ CMT        2010-03-15 11:07:30  2010-03-15 11:21:39                2            2.2          -73.9574          40.78            1                   0           -73.9838
+                                                                                                                                                                  8 columns omitted</code></pre><p>Note the first row of the output data set is strange, and the output data set is truncated, thus, we cannot see the detected type of columns. We first fix the problem with the first observation. Since the first cell is filled with &quot;<code>\r</code>&quot; we should suspect that the end-of-line character for this file might be detected incorrectly. The <code>filereader</code> package allows user to pass the end-of-line character via the <code>linebreak</code> keyword argument. In general, &quot;<code>\n</code>&quot; is the end-of-line character for most delimited file, however, in some operating systems &quot;<code>\r</code>&quot;, &quot;<code>\r\n</code>&quot;, etc might be used for this purpose. Using trial and error (there are other ways rather than trial and error) we noticed that the end-of-line for this file is &quot;<code>\r\n</code>&quot;, and there is an extra &quot;<code>\n</code>&quot; in the first line of the file which has puzzled the automatic detection. Thus, we rerun the code and pass the <code>linebreak</code> keyword argument to fix the first issue of this file,</p><pre><code class="language-julia hljs">julia&gt; taxi = filereader(taxi_file, limit = 4, linebreak = [&#39;\r&#39;,&#39;\n&#39;])
+4×18 Dataset
+ Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
+     │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
+     │ String?    String?              String?              Int64?           Float64?       Float64?          Float64?         Int64?     Int64?              Float64?            ⋯
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ CMT        2010-03-15 15:29:46  2010-03-15 15:34:09                1            0.8          -74.0047          40.7343          1                   0           -73.9936   ⋯
+   2 │ CMT        2010-03-15 11:44:31  2010-03-15 11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
+   3 │ CMT        2010-03-15 11:07:30  2010-03-15 11:21:39                2            2.2          -73.9574          40.78            1                   0           -73.9838
+   4 │ CMT        2010-03-15 14:57:33  2010-03-15 15:10:26                1            4.1          -74.016           40.7151          1                   0           -73.9904
+                                                                                                                                                                  8 columns omitted</code></pre><h2 id="Passing-data-types"><a class="docs-heading-anchor" href="#Passing-data-types">Passing data types</a><a id="Passing-data-types-1"></a><a class="docs-heading-anchor-permalink" href="#Passing-data-types" title="Permalink"></a></h2><p>In general, providing the data type of columns improve the efficiency of reading delimited file. To provide such information, we look at the detected types in <code>taxi</code> and pass the right data types. To examine the detected types of a data set, we should use the <code>content</code> and <code>describe</code> functions from the <code>InMemoryDatasets</code> package.</p><pre><code class="language-julia hljs">julia&gt; using InMemoryDatasets
+
+julia&gt; content(taxi)
+4×18 Dataset
+   Created: 2022-05-13T15:00:55.868
+  Modified: 2022-05-13T15:00:55.868
+      Info: 
+-----------------------------------
+Columns information 
+┌─────┬────────────────────┬──────────┬─────────┐
+│ Row │ col                │ format   │ eltype  │
+├─────┼────────────────────┼──────────┼─────────┤
+│   1 │ vendor_id          │ identity │ String  │
+│   2 │ pickup_datetime    │ identity │ String  │
+│   3 │ dropoff_datetime   │ identity │ String  │
+│   4 │ passenger_count    │ identity │ Int64   │
+│   5 │ trip_distance      │ identity │ Float64 │
+│   6 │ pickup_longitude   │ identity │ Float64 │
+│   7 │ pickup_latitude    │ identity │ Float64 │
+│   8 │ rate_code          │ identity │ Int64   │
+│   9 │ store_and_fwd_flag │ identity │ Int64   │
+│  10 │ dropoff_longitude  │ identity │ Float64 │
+│  11 │ dropoff_latitude   │ identity │ Float64 │
+│  12 │ payment_type       │ identity │ String  │
+│  13 │ fare_amount        │ identity │ Float64 │
+│  14 │ surcharge          │ identity │ Int64   │
+│  15 │ mta_tax            │ identity │ Float64 │
+│  16 │ tip_amount         │ identity │ Int64   │
+│  17 │ tolls_amount       │ identity │ Int64   │
+│  18 │ total_amount \n    │ identity │ Float64 │
+└─────┴────────────────────┴──────────┴─────────┘</code></pre><p>Note that the type detection for some columns is incorrect, e.g. <code>pickup_datetime</code>, <code>dropoff_datetime</code>, <code>surcharge</code>, etc. In the next step we pass the incorrectly detected columns via the <code>types</code> and <code>dtformat</code> keyword arguments,</p><pre><code class="language-julia hljs">julia&gt; taxi = filereader(taxi_file, limit = 4, linebreak = [&#39;\r&#39;,&#39;\n&#39;], 
+                            types = Dict([14,16,17] .=&gt; Float64), 
+                            dtformat = Dict(2:3 .=&gt; dateformat&quot;y-m-d H:M:S&quot;))
+4×18 Dataset
+ Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
+     │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
+     │ String?    DateTime?            DateTime?            Int64?           Float64?       Float64?          Float64?         Int64?     Int64?              Float64?            ⋯
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ CMT        2010-03-15T15:29:46  2010-03-15T15:34:09                1            0.8          -74.0047          40.7343          1                   0           -73.9936   ⋯
+   2 │ CMT        2010-03-15T11:44:31  2010-03-15T11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
+   3 │ CMT        2010-03-15T11:07:30  2010-03-15T11:21:39                2            2.2          -73.9574          40.78            1                   0           -73.9838
+   4 │ CMT        2010-03-15T14:57:33  2010-03-15T15:10:26                1            4.1          -74.016           40.7151          1                   0           -73.9904
+                                                                                                                                                                  8 columns omitted</code></pre><p>Passing the date format of the DataTime columns is sufficient for parsing their values. Thus, in the previous code, we only passed the <code>dtformat</code> keyword argument for the second and third column.</p><p>In the next step, we store the data types of the columns in an array and pass it to the <code>filereader</code> function to process the whole file. Note that for date values in non-standard form we need to pass the <code>dtformat</code> keyword argument.</p><pre><code class="language-julia hljs">julia&gt; _tmp = content(taxi, output = true)[2];
+
+julia&gt; alltypes = identity.(_tmp[:, :eltype]);
+
+julia&gt; taxi = filereader(taxi_file, linebreak = [&#39;\r&#39;,&#39;\n&#39;], 
+                            types = alltypes, 
+                            dtformat = Dict(2:3 .=&gt; dateformat&quot;y-m-d H:M:S&quot;))
+┌ Info: There might be more observations in the input file at line 11 (observation 10) than the number of columns in the output dataset.
+└  CMT,2010-03-15 15:35:04,2010-03-15 16:00:07,1,5.2000000000000002,-73.993639000000002,40.720208999999997,1,,,-73.946438000000001,40.778773999999999,Cas,16.100000000000001,0,0.5,0,0,16.600000000000001.
+┌ Warning: There are problems with parsing the input file at line 11 (observation 10) : 
+│ Column 13 : fare_amount::Float64 : Read from buffer (&quot;Cas&quot;)
+│  the values are set as missing.
+│ MORE DETAILS: 
+│ vendor_id::String = CMT, pickup_datetime::DateTime = 2010-03-15T15:35:04, dropoff_datetime::DateTime = 2010-03-15T16:00:07, passenger_count::Int64 = 1, trip_distance::Float64 = 5.2, pickup_longitude::Float64 = -73.993639, pickup_latitude::Float64 = 40.720209, rate_code::Int64 = 1, store_and_fwd_flag::Int64 = missing, dropoff_longitude::Float64 = missing, dropoff_latitude::Float64 = -73.946438, payment_type::String = 40.778773999999999, fare_amount::Float64 = missing, surcharge::Float64 = 16.1, mta_tax::Float64 = 0.0, tip_amount::Float64 = 0.5, tolls_amount::Float64 = 0.0, total_amount::Float64 = 0.0
+│ CMT,2010-03-15 15:35:04,2010-03-15 16:00:07,1,5.2000000000000002,-73.993639000000002,40.720208999999997,1,,,-73.946438000000001,40.778773999999999,Cas,16.100000000000001,0,0.5,0,0,16.600000000000001
+└ @ DLMReader ...
+20×18 Dataset
+ Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
+     │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
+     │ String?    DateTime?            DateTime?            Int64?           Float64?       Float64?          Float64?         Int64?     Int64?              Float64?            ⋯
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ CMT        2010-03-15T15:29:46  2010-03-15T15:34:09                1            0.8          -74.0047          40.7343          1                   0           -73.9936   ⋯
+   2 │ CMT        2010-03-15T11:44:31  2010-03-15T11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
+  ⋮  │     ⋮               ⋮                    ⋮                  ⋮               ⋮               ⋮                 ⋮             ⋮              ⋮                   ⋮           ⋱
+  19 │ CMT        2010-03-15T14:31:04  2010-03-15T14:40:03                1            0.9          -73.9977          40.7412          1                   0           -73.9834
+  20 │ CMT        2010-03-15T12:20:25  2010-03-15T12:26:38                1            0.9          -73.9983          40.7454          1                   0           -73.9954
+                                                                                                                                                      8 columns and 16 rows omitted</code></pre><h2 id="Examining-the-warnings"><a class="docs-heading-anchor" href="#Examining-the-warnings">Examining the warnings</a><a id="Examining-the-warnings-1"></a><a class="docs-heading-anchor-permalink" href="#Examining-the-warnings" title="Permalink"></a></h2><p>The last code produces some <code>info</code> and <code>warning</code> messages which alert the existence of some issues in reading process. When the <code>filereader</code> reads all the columns but fails to reach the end of the line, it produce some <code>info</code> to alert user. The <code>Info</code> message contains the information about location of issue and the raw text of the input line. </p><p>Additionally, when the <code>filereader</code> cannot parse a particular values, it provides some <code>warning</code> messages to help users to investigate the problem. The message contains the details and the location of the problem.</p><p>In the above example, we can see that the 11th line of the input file has an issue. An investigation reveals that the problem is due to extra &quot;<code>,</code>&quot; in place of missing values, i.e. near &quot;<code>1,,,-73.946438000000001</code>&quot;. This causes a shift in values, thus, the <code>filereader</code> function fails to parse the value of the 13th column. This problem is a data entry problem and we cannot fix it unless there is a systematic pattern for such problems. Fortunately, for this specific file the patter is fixed for all lines so we can exploit some features of the <code>DLMReader</code> package to fix the issue.</p><p>To fix the aforementioned problem, we define a new informat which reads a line from the input file and modify its contents in-place and pass this to the <code>filereader</code> function via  <code>line_informat</code>.</p><p>The logic that we are going to follow is &quot;replacing the second <code>,</code> in <code>,,,</code> with space&quot;. Note that this may not make sense for any other files, thus, user must search for a particular  pattern in each case.</p><p>The <code>line_informat</code> keyword argument accepts a registered informat which is a function with one positional argument, a special type of mutable string.</p><blockquote><p>Note that the <code>line_informat</code> informat is called on each line of the input file, thus, use low level programming to avoid any allocation.</p></blockquote><blockquote><p>Note that the last column name has an extra &#39;\n&#39;. To fix it, user can call <code>rename!(taxi, &quot;total_amount \n&quot; =&gt; &quot;total_amount&quot;)</code>.</p></blockquote><pre><code class="language-julia hljs">julia&gt; function LINFMT!(x)
+            replace!(x, &quot;,,,&quot; =&gt; &quot;, ,&quot;)
+        end
+julia&gt; register_informat(LINFMT!)
+    [ Info: Informat LINFMT! has been registered
+
+julia&gt; taxi = filereader(taxi_file, linebreak = [&#39;\r&#39;,&#39;\n&#39;], 
+                            types = alltypes,
+                            dtformat = Dict(2:3 .=&gt; dateformat&quot;y-m-d H:M:S&quot;), 
+                            line_informat = LINFMT!)
+20×18 Dataset
+ Row │ vendor_id  pickup_datetime      dropoff_datetime     passenger_count  trip_distance  pickup_longitude  pickup_latitude  rate_code  store_and_fwd_flag  dropoff_longitude   ⋯
+     │ identity   identity             identity             identity         identity       identity          identity         identity   identity            identity            ⋯
+     │ String?    DateTime?            DateTime?            Int64?           Float64?       Float64?          Float64?         Int64?     Int64?              Float64?            ⋯
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ CMT        2010-03-15T15:29:46  2010-03-15T15:34:09                1            0.8          -74.0047          40.7343          1                   0           -73.9936   ⋯
+   2 │ CMT        2010-03-15T11:44:31  2010-03-15T11:48:48                1            0.3          -73.9584          40.7729          1                   0           -73.9636
+  ⋮  │     ⋮               ⋮                    ⋮                  ⋮               ⋮               ⋮                 ⋮             ⋮              ⋮                   ⋮           ⋱
+  20 │ CMT        2010-03-15T12:20:25  2010-03-15T12:26:38                1            0.9          -73.9983          40.7454          1                   0           -73.9954
+                                                                                                                                                      8 columns and 17 rows omitted
+
+julia&gt; rename!(taxi, &quot;total_amount \n&quot; =&gt; &quot;total_amount&quot;)</code></pre><h2 id="Dealing-with-String-columns"><a class="docs-heading-anchor" href="#Dealing-with-String-columns">Dealing with String columns</a><a id="Dealing-with-String-columns-1"></a><a class="docs-heading-anchor-permalink" href="#Dealing-with-String-columns" title="Permalink"></a></h2><p>Columns with <code>String</code> type cause performance issue for large data sets. If those columns contains only a few unique values then we must convert the corresponding columns to <code>PooledArray</code>. However, if this is not possible we must read those columns into <code>Julia</code> as fixed-length string types. </p><blockquote><p>User can read the columns as fixed-length string and convert them into <code>PooledArray</code> later.</p></blockquote><p>To convert the columns with <code>String</code> type to <code>PooledArray</code>, user should use the <code>modify!</code> function from the <code>InMemoryDatasets</code> package,</p><pre><code class="language-julia hljs">julia&gt; using PooledArrays
+
+julia&gt; modify!(taxi, names(taxi, AbstractString) =&gt; PooledArray);
+
+julia&gt; describe(taxi)
+18×7 Dataset
+ Row │ column              n         nmissing  mean      std        minimum              maximum             
+     │ identity            identity  identity  identity  identity   identity             identity            
+     │ String?             Any       Any       Any       Any        Any                  Any                 
+─────┼───────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ vendor_id           20        0         nothing   nothing    CMT                  CMT
+   2 │ pickup_datetime     20        0         nothing   nothing    2010-03-15T11:07:30  2010-03-15T15:35:04
+   3 │ dropoff_datetime    20        0         nothing   nothing    2010-03-15T11:21:39  2010-03-15T16:00:07
+   4 │ passenger_count     20        0         1.1       0.307794   1                    2
+   5 │ trip_distance       20        0         2.11      2.15917    0.1                  9.2
+   6 │ pickup_longitude    20        0         -73.9863  0.0186699  -74.016              -73.9574
+   7 │ pickup_latitude     20        0         40.7486   0.022824   40.7151              40.7972
+   8 │ rate_code           20        0         1.0       0.0        1                    1
+   9 │ store_and_fwd_flag  19        1         0.0       0.0        0                    0
+  10 │ dropoff_longitude   20        0         -73.9782  0.0154007  -74.0016             -73.9464
+  11 │ dropoff_latitude    20        0         40.7603   0.0178604  40.7196              40.7838
+  12 │ payment_type        20        0         nothing   nothing    Cas                  Cre
+  13 │ fare_amount         20        0         8.44      5.62741    2.5                  27.7
+  14 │ surcharge           20        0         0.0       0.0        0.0                  0.0
+  15 │ mta_tax             20        0         0.5       0.0        0.5                  0.5
+  16 │ tip_amount          20        0         0.368     0.830127   0.0                  3.0
+  17 │ tolls_amount        20        0         0.0       0.0        0.0                  0.0
+  18 │ total_amount        20        0         9.308     5.74365    3.0                  28.2
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../tutorial_basic/">« Basic</a><a class="docs-footer-nextpage" href="../read/">Reading and Writing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Sunday 9 June 2024 19:07">Sunday 9 June 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
