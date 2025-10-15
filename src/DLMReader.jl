@@ -3,6 +3,7 @@ module DLMReader
 using InMemoryDatasets
 using UUIDs
 using Reexport
+using Parsers
 @reexport using Dates, InlineStrings
 
 export 
@@ -25,7 +26,7 @@ export
 # see https://github.com/sl-solution/DLMReader.jl/issues/5
 if Base.Sys.iswindows()
     function typeparser(::Type{T}, x::Vector{UInt8}, lo::Int, hi::Int) where T <: Real
-        val = InlineStrings.Parsers.xparse(T, x, lo, hi)
+        val = Parsers.xparse(T, x, lo, hi)
         if val.code == 33
             return true, val.val
         else
