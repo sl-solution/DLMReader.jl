@@ -853,7 +853,7 @@ function parse_eachrow(problems::Vector{Bool}, ::Type{T}, x::Vector, buffer::Lin
                     idx[i,j] = (new_lo, new_hi)
                 end
                 if char_buff !== nothing
-                    charbuff = char_buff[Threads.threadid()]
+                    charbuff = char_buff[Threads.threadid() % Threads.nthreads() + 1]
                 else
                     charbuff = nothing
                 end
@@ -876,7 +876,7 @@ function parse_eachrow(problems::Vector{Bool}, ::Type{T}, x::Vector, buffer::Lin
                     idx[i,j] = (new_lo, new_hi)
                 end
                 if char_buff !== nothing
-                    charbuff = char_buff[Threads.threadid()]
+                    charbuff = char_buff[1]
                 else
                     charbuff = nothing
                 end
