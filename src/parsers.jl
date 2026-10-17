@@ -1,3 +1,6 @@
+# `Base.MPFR.libmpfr` was added in Julia 1.9
+const libmpfr = isdefined(Base.MPFR, :libmpfr) ? Base.MPFR.libmpfr : :libmpfr
+
 all_integer_types = Union{Int8, Int16, Int32, Int64, Int128, UInt8, UInt16, UInt32, UInt64, UInt128}
 function buff_parser(res, lbuff::LineBuffer, cc::Int, nd::Int, current_line::Int, df, ::Type{T})::Int where  T <: TimeType
     flag = 0
@@ -95,7 +98,7 @@ function buff_parser(res, lbuff::Vector{UInt8}, cc::Int, nd::Int, current_line::
         return 0
     end
     z = BigFloat(precision=Base.MPFR.DEFAULT_PRECISION[])
-    err = ccall((:mpfr_set_str, :libmpfr), Int32, (Ref{BigFloat}, Cstring, Int32, Base.MPFR.MPFRRoundingMode), z, SubString(lbuff, newlo, newhi), 0, Base.MPFR.ROUNDING_MODE[])
+    err = ccall((:mpfr_set_str, libmpfr), Int32, (Ref{BigFloat}, Cstring, Int32, Base.MPFR.MPFRRoundingMode), z, SubString(lbuff, newlo, newhi), 0, Base.MPFR.ROUNDING_MODE[])
     if err == 0
         res[current_line] = z
         return 0
@@ -316,7 +319,7 @@ function buff_parser_ind(problems, p_idx, lbuff, cc, nd, df, charbuff, base, tri
         res = missing
     end
     z = BigFloat(precision=Base.MPFR.DEFAULT_PRECISION[])
-    err = ccall((:mpfr_set_str, :libmpfr), Int32, (Ref{BigFloat}, Cstring, Int32, Base.MPFR.MPFRRoundingMode), z, SubString(lbuff, newlo, newhi), 0, Base.MPFR.ROUNDING_MODE[])
+    err = ccall((:mpfr_set_str, libmpfr), Int32, (Ref{BigFloat}, Cstring, Int32, Base.MPFR.MPFRRoundingMode), z, SubString(lbuff, newlo, newhi), 0, Base.MPFR.ROUNDING_MODE[])
     if err == 0
         res = z
     else
